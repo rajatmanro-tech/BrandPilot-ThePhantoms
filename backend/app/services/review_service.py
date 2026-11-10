@@ -7,22 +7,7 @@ from app.services.openai_service import review_content_openai
 
 
 def review_content_with_fallback(content: str, brand_rules: list[dict]):
-    # First provider: Gemini
-    try:
-        print("Attempting review with Gemini...", flush=True)
-
-        result = review_content(content, brand_rules)
-
-        print("Review completed using Gemini.", flush=True)
-        return result, "gemini"
-
-    except ServerError as error:
-        if error.code not in (503, 504):
-            raise
-
-        print(f"Gemini unavailable (HTTP {error.code}).", flush=True)
-
-    # Second provider: Groq
+    # Primary provider: Groq
     try:
         print("Attempting review with Groq...", flush=True)
 
@@ -31,10 +16,32 @@ def review_content_with_fallback(content: str, brand_rules: list[dict]):
         print("Review completed using Groq.", flush=True)
         return result, "groq"
 
-    except (OpenAIError, ValueError) as error:
-        print(f"Groq unavailable: {type(error).__name__}", flush=True)
+    except OpenAIError as error:
+        print(f"GROQ ERROR TYPE: {type(error).__name__}", flush=True)
+        print(f"GROQ ERROR DETAILS: {getattr(error, 'body', None)}", flush=True)
+        print(f"GROQ ERROR MESSAGE: {error}", flush=True)
 
-    # Third provider: OpenAI
+        print("Groq unavailable. Trying Gemini...", flush=True)
+
+    except ValueError as error:
+        print(f"Groq returned invalid data: {error}", flush=True)
+
+    # Fallback provider: Gemini
+    try:
+        print("Attempting review with Gemini...", flush=True)
+
+        result = review_content(content, brand_rules)
+
+        print("Review completed using Gemini.", flush=True)
+        return result, "gemini"
+
+    except (ServerError, ValueError) as error:
+        print(
+            f"Gemini unavailable: {type(error).__name__}: {error}",
+            flush=True,
+        )
+
+    # Last fallback: OpenAI
     try:
         print("Attempting review with OpenAI...", flush=True)
 
@@ -44,7 +51,10 @@ def review_content_with_fallback(content: str, brand_rules: list[dict]):
         return result, "openai"
 
     except (OpenAIError, ValueError) as error:
-        print(f"OpenAI unavailable: {type(error).__name__}", flush=True)
+        print(
+            f"OpenAI unavailable: {type(error).__name__}: {error}",
+            flush=True,
+        )
 
         raise RuntimeError(
             "All AI review providers are currently unavailable. "

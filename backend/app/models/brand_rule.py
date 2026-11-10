@@ -37,6 +37,8 @@ class BrandRule(Base):
         nullable=False,
     )
 
+    rule_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
     category: Mapped[str] = mapped_column(
         String(50),
         nullable=False,

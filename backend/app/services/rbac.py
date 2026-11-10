@@ -9,6 +9,7 @@ ROLE_PERMISSIONS = {
         "members:manage",
         "rules:manage",
         "reports:read",
+        "reviews:decide",
     ],
     "admin": [
         "brand:read",
@@ -16,6 +17,7 @@ ROLE_PERMISSIONS = {
         "members:manage",
         "rules:manage",
         "reports:read",
+        "reviews:decide",
     ],
     "viewer": [
         "brand:read",

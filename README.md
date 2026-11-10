@@ -1,19 +1,36 @@
 # BrandPilot – The Phantoms
 
-**AI-powered Brand Governance and Content Review Platform**
+**AI-Powered Brand Governance Platform**
 
-BrandPilot helps organisations maintain a consistent and trustworthy brand identity by reviewing text and visual content against approved brand guidelines before publication.
+BrandPilot is an intelligent brand-governance platform that helps organisations maintain brand consistency and trust by reviewing content before publication. It identifies violations, explains findings, suggests corrections, and supports human approval workflows.
 
-## Features
+## 🚀 Live Project
 
-- **Brand Management:** Create and manage brand workspaces.
-- **Custom Brand Rules:** Define organisation-specific content guidelines.
-- **AI-Powered Text Review:** Detect tone, terminology and potentially unsupported claims.
-- **Visual Review:** Identify off-palette colours and accessibility issues.
-- **Human Approval Workflow:** Accept suggested fixes or override findings with a reason.
-- **Audit Trail:** Record review decisions and verify audit-chain integrity.
+- **Live Website:** https://brandpilot-frontend.vercel.app/
+- **Backend API:** https://brandpilot-thephantoms.onrender.com
+- **API Documentation:** https://brandpilot-thephantoms.onrender.com/docs
+- **GitHub Repository:** https://github.com/rajatmanro-tech/BrandPilot-ThePhantoms
 
-## Technology Stack
+## 🎯 Problem Statement
+
+Organisations publish content through multiple employees, agencies, and AI tools. Maintaining consistent brand identity across all these channels is difficult.
+
+Incorrect claims, outdated information, inconsistent terminology, and off-brand visuals can damage brand credibility.
+
+BrandPilot addresses this challenge by checking content against approved brand guidelines before publication.
+
+## ✨ Key Features
+
+- **Brand Management:** Create and manage brand profiles and guidelines.
+- **Rule Management:** Define brand rules, categories, severity levels, and descriptions.
+- **AI-Powered Text Review:** Analyse content and identify potential brand violations.
+- **Explainable Findings:** Display detected issues with explanations and suggested corrections.
+- **Image Review:** Check colour palette consistency and accessibility requirements.
+- **Review Workflow:** Accept suggested corrections or override findings.
+- **Approval Workflow:** Support human review and approval decisions.
+- **Audit Logs:** Maintain records of review decisions and actions.
+
+## 🛠️ Technology Stack
 
 | Component | Technology |
 |---|---|
@@ -21,55 +38,49 @@ BrandPilot helps organisations maintain a consistent and trustworthy brand ident
 | Backend | Python, FastAPI |
 | Database | PostgreSQL |
 | ORM | SQLAlchemy |
-| Migrations | Alembic |
-| AI integrations | Groq, Gemini, OpenAI |
+| Database Migrations | Alembic |
+| Authentication | JWT |
+| AI Integration | Groq, Google Gemini, OpenAI |
+| Frontend Hosting | Vercel |
+| Backend Hosting | Render |
 
-## Project Structure
+## 🏗️ Architecture
 
-```text
-BrandPilot-ThePhantoms/
-├── frontend/
-│   └── index.html
-├── backend/
-│   ├── app/
-│   │   ├── core/
-│   │   ├── db/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── schemas/
-│   │   └── services/
-│   ├── migrations/
-│   ├── tests/
-│   ├── .env.example
-│   ├── alembic.ini
-│   └── requirements.txt
-├── docs/
-├── .gitignore
-├── LICENSE
-└── README.md
-```
+BrandPilot follows a frontend-backend architecture.
 
-## Prerequisites
+1. Users interact with the frontend through the web application.
+2. The frontend communicates with the FastAPI backend through REST APIs.
+3. The backend processes requests, manages authentication, and performs brand reviews.
+4. AI services assist with text analysis and review findings.
+5. PostgreSQL stores application data, including users, brands, rules, reviews, and audit records.
+6. Review decisions are recorded to support accountability and traceability.
 
-- Python 3.12
+## ⚙️ Local Setup
+
+### Prerequisites
+
+- Python 3.12 or compatible version
 - PostgreSQL
 - Git
 
-## Backend Setup
-
-Clone the repository:
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/rajatmanro-tech/BrandPilot-ThePhantoms.git
 cd BrandPilot-ThePhantoms
 ```
 
-Create and activate a virtual environment:
+### 2. Set up the backend
+
+```bash
+cd backend
+python -m venv .venv
+```
+
+Activate the virtual environment on Windows:
 
 ```powershell
-cd backend
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
+.venv\Scripts\activate
 ```
 
 Install dependencies:
@@ -78,57 +89,82 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Configure environment variables:
+### 3. Configure environment variables
 
-```powershell
-Copy-Item .env.example .env
+Create a `.env` file inside the `backend` directory.
+
+Configure the following variables:
+
+```env
+DATABASE_URL=your_postgresql_database_url
+SECRET_KEY=your_secret_key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=openai/gpt-oss-20b
+GEMINI_API_KEY=your_gemini_api_key
+OPENAI_API_KEY=your_openai_api_key
 ```
 
-Update `.env` with your PostgreSQL connection string and required AI provider credentials.
+Use your own credentials. Never commit API keys or database passwords to GitHub.
 
-Create the database in PostgreSQL, then run:
+### 4. Run database migrations
 
 ```bash
 alembic upgrade head
 ```
 
-Start the backend:
+### 5. Start the backend
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-Backend: http://127.0.0.1:8000
+Backend runs at:
 
-API documentation: http://127.0.0.1:8000/docs
+`http://127.0.0.1:8000`
 
-## Frontend Setup
+API documentation:
 
-Open a second terminal from the repository root:
+`http://127.0.0.1:8000/docs`
 
-```powershell
-cd frontend
-py -m http.server 3000
-```
+### 6. Run the frontend
 
-Open http://127.0.0.1:3000
+Open `frontend/index.html` in a browser.
 
-The frontend connects to the local backend at `http://127.0.0.1:8000`.
+For local development, ensure the frontend API base URL points to your local backend.
 
-## Security
+## 🔐 Security
 
-- Never commit `.env` files or API keys.
-- Use `.env.example` as the configuration template.
-- Keep virtual environments and Python cache files out of version control.
+- JWT-based authentication.
+- Environment-based configuration for sensitive credentials.
+- Password hashing.
+- Backend API validation.
+- Human-controlled review and approval decisions.
 
-## Current Limitations
+## ⚠️ Current Limitations
 
-- Visual review currently uses deterministic palette and accessibility checks rather than general-purpose image understanding.
-- Aggregate dashboard analytics are not currently exposed by the backend API.
-- AI review availability depends on the configured provider and its API limits.
+- Image review currently focuses on deterministic colour-palette and accessibility checks rather than general-purpose image understanding.
+- AI-generated findings may require human verification.
+- Advanced document ingestion, expanded analytics, and external-contributor workflows are planned improvements.
 
-## Team
+## 👥 Team – The Phantoms
 
-**The Phantoms**
+| Member | Role |
+|---|---|
+| Aditya Singh | Lead AI & RAG Engineer |
+| Karanveer Singh | Multi-Modal & Computer Vision Developer |
+| Rajat Manro | Backend & Systems Architect |
+| Ranvir Singh | Frontend & Interactive UI Engineer |
 
-Built for CodeTitans India 2026.
+## 🔮 Future Scope
+
+- DOCX/PDF document ingestion with approved exports.
+- Insights dashboard and guideline-ambiguity detection.
+- External-contributor agency workflow with scoped access.
+- Improved accessibility and reliability testing.
+
+## 📄 License
+
+This project was developed as part of CodeTitans India 2026 by Team The Phantoms.

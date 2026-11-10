@@ -139,7 +139,7 @@ mark.done{background:none;border-color:transparent;border-bottom:2px dashed var(
 <div class="row" style="margin-top:12px;justify-content:flex-end"><button class="btn" id="wc">Cancel</button><button class="btn p" id="wo">Save override</button></div></div></div>
 
 <script>
-const $=s=>document.querySelector(s), API_BASE="http://127.0.0.1:8000";
+const $=s=>document.querySelector(s), API_BASE="https://brandpilot-thephantoms.onrender.com";
 let authToken=sessionStorage.getItem("brandpilot_token"),activeBrandId=sessionStorage.getItem("brandpilot_brand_id"),currentReview=null,findings=[],accepted=0,overridden=0,selectedImage=null,pendingFinding=null;
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const say=(id,t)=>{const e=$("#"+id);if(e)e.textContent=t||""};

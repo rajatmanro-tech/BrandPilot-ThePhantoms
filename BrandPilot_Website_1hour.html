@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BrandPilot ΓÇô Brand compliance review</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#F7F6FA;--surf:#fff;--ink:#0E0E12;--mut:#6B6880;--line:#E5E2EE;--brand:#6D28D9;--onbrand:#fff;--gold:#8B5CF6;--goldbg:#F1EAFD;
+--red:#C0392B;--redbg:#F9DEDA;--yel:#B8860B;--yelbg:#FBF0C4;--blu:#2F6DB5;--blubg:#DCE8F7;--ok:#6D28D9}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0B0B0F;--surf:#15151C;--ink:#F4F2FA;--mut:#9C98B2;--line:#2A2838;--brand:#8B5CF6;--gold:#A78BFA;--goldbg:#2A2147;--redbg:#4A2420;--yelbg:#41371A;--blubg:#1F3350;--red:#F08A7E;--yel:#E5BF5A;--blu:#8DB8EE;--ok:#B59CFB}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Inter","Segoe UI",system-ui,sans-serif}
+header{background:#0E0E12;border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.bar{max-width:1100px;margin:auto;padding:12px 20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.logo{font-weight:700;font-size:18px;color:#fff;display:flex;align-items:center;gap:8px}
+.logo i{width:22px;height:22px;border-radius:6px;background:var(--brand);display:inline-block;border-bottom:4px solid var(--gold)}
+nav{display:flex;gap:4px;overflow-x:auto}
+nav a{padding:7px 12px;border-radius:8px;color:#B3AFC8;text-decoration:none;font-weight:500;white-space:nowrap}
+nav a.on{background:var(--brand);color:var(--onbrand)}
+main{max-width:1100px;margin:auto;padding:28px 20px 60px}
+section.view{display:none}section.view.on{display:block}
+h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}h2{font-size:16px;margin:0 0 12px}
+.sub{color:var(--mut);margin:0 0 24px;max-width:62ch}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:18px;text-align:center;cursor:pointer;display:block;color:var(--mut)}
+.drop:hover{border-color:var(--brand)}.drop b{display:block;color:var(--ink)}.drop input{display:none}.fn{color:var(--ok);font-size:13px;margin-top:6px;word-break:break-all}
+.btn{border:1px solid var(--line);background:var(--surf);color:var(--ink);padding:8px 14px;border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
+.btn.p{background:var(--brand);border-color:var(--brand);color:var(--onbrand)}.btn.g{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}.btn:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hex{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sw{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);flex:none}
+input[type=text],input[type=email],input[type=password],input[type=number],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+.ed{min-height:260px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--bg);outline:none;line-height:1.9;font-size:16px}
+.ed:focus{border-color:var(--brand)}.ed p{margin:0 0 10px}
+mark.h{padding:1px 3px;border-radius:4px;cursor:pointer;color:inherit;border-bottom:2px solid}
+mark.crit{background:var(--redbg);border-color:var(--red)}mark.term{background:var(--yelbg);border-color:var(--yel)}mark.tone{background:var(--blubg);border-color:var(--blu)}
+mark.done{background:none;border-color:transparent;border-bottom:2px dashed var(--ok)}
+.leg{display:flex;gap:14px;font-size:13px;color:var(--mut);flex-wrap:wrap}.leg span:before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.leg .c:before{background:var(--red)}.leg .t:before{background:var(--yel)}.leg .n:before{background:var(--blu)}
+.pop{position:absolute;z-index:20;width:min(340px,92vw);background:var(--surf);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:14px;display:none}
+.diff{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.diff div{padding:8px 10px;border-radius:8px;font-size:14px}.diff small{display:block;color:var(--mut);font-size:12px;margin-bottom:2px}
+.o{background:var(--redbg)}.s{background:#EDE7FB;color:#2E1065}
+.tag{font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px}
+.tag.crit{background:var(--redbg);color:var(--red)}.tag.term{background:var(--yelbg);color:var(--yel)}.tag.tone{background:var(--blubg);color:var(--blu)}.tag.ok{background:#EDE7FB;color:#5B21B6}.tag.ov{background:var(--goldbg);color:var(--yel)}
+.stage{position:relative;max-width:420px;margin:auto;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.stage img,.stage svg.poster{display:block;width:100%}
+.box{position:absolute;border:2px solid var(--red);background:rgba(192,57,43,.12);border-radius:3px;cursor:pointer}
+.box.w{border-color:#E0A800;background:rgba(224,168,0,.14)}.box.on{box-shadow:0 0 0 3px var(--gold)}
+.box span{position:absolute;top:-1px;left:-1px;transform:translateY(-100%);background:var(--red);color:#fff;font-size:11px;padding:1px 6px;border-radius:4px 4px 0 0;white-space:nowrap}
+.box.w span{background:#E0A800;color:#111}
+.item{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;padding:14px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.item:first-child{border-top:0}.item p{margin:2px 0 0;color:var(--mut);font-size:14px}
+.bar-t{height:10px;background:var(--bg);border-radius:99px;overflow:hidden;margin-top:6px}.bar-t i{display:block;height:100%;background:var(--brand);border-radius:99px}.bar-t i.g{background:var(--gold)}
+.modal{position:fixed;inset:0;background:rgba(10,20,14,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}.modal.on{display:flex}
+.modal .card{width:min(440px,100%);margin:0}
+.badge{border:3px solid var(--brand);border-radius:14px;padding:20px;text-align:center;margin-top:12px;background:var(--goldbg)}
+.badge b{font-size:20px;color:var(--brand);display:block}
+.stat{font-size:28px;font-weight:700}
+@media(max-width:640px){.diff{grid-template-columns:1fr}}
+</style></head><body>
+<header><div class="bar"><div class="logo"><i></i>BrandPilot</div>
+<nav id="nav"><a href="#setup">Brand setup</a><a href="#editor">Text review</a><a href="#image">Image review</a><a href="#queue">Approval queue</a><a href="#dashboard">Governance</a><a href="#account">Account</a></nav></div></header>
+<main>
+<section class="view" id="account">
+  <h1>Account</h1>
+  <p class="sub">Sign in to access your brand workspace.</p>
+
+  <div class="card" style="max-width:450px">
+    <label>Email</label>
+    <input id="loginEmail" type="email" placeholder="Enter your email"
+      style="width:100%;padding:12px;margin:8px 0 16px">
+
+    <label>Password</label>
+    <input id="loginPassword" type="password" placeholder="Enter your password"
+      style="width:100%;padding:12px;margin:8px 0 16px">
+
+    <button class="btn p" id="loginBtn">Sign in</button><hr><h2>Create account</h2><input id="regName" type="text" placeholder="Full name"><input id="regEmail" type="email" placeholder="Email"><input id="regPassword" type="password" placeholder="Password, minimum 8 characters"><button class="btn" id="registerBtn">Register</button><button class="btn" id="logoutBtn">Sign out</button>
+    <p class="sub" id="authMsg" style="margin-top:12px"></p>
+    <p id="userInfo"></p>
+  </div>
+</section>
+<section class="view" id="setup">
+<h1>Brand setup</h1><p class="sub">Upload your brand assets once. Every scan checks creator content against them.</p>
+<div class="grid">
+<label class="drop"><input type="file" accept=".pdf" data-f="f1"><b>Brand guide (PDF)</b>Click to choose a file<div class="fn" id="f1"></div></label>
+<label class="drop"><input type="file" accept=".csv" data-f="f2"><b>Approved claims (CSV)</b>Click to choose a file<div class="fn" id="f2"></div></label>
+<label class="drop"><input type="file" accept="image/*" multiple data-f="f3"><b>Logo images</b>PNG, SVG or JPG<div class="fn" id="f3"></div></label>
+</div>
+<div class="card"><h2>Workspace</h2><div class="row"><select id="brandSelect" style="min-width:220px;padding:10px"><option>Sign in first</option></select><input id="newBrandName" type="text" placeholder="New brand name" style="max-width:220px"><button class="btn" id="createBrand">Create brand</button></div><p id="brandMsg" class="fn"></p></div>
+<div class="card"><h2>Brand rules</h2><div class="grid"><input id="ruleCategory" type="text" placeholder="Category"><input id="ruleTitle" type="text" placeholder="Rule title"><input id="ruleCode" type="text" placeholder="Rule code (optional)"><select id="ruleSeverity"><option>low</option><option selected>medium</option><option>high</option><option>critical</option></select></div><textarea id="ruleDescription" rows="2" placeholder="Rule description"></textarea><div class="row"><button class="btn p" id="addRule">Add rule</button><button class="btn" id="refreshRules">Refresh rules</button><span id="ruleMsg" class="fn"></span></div><div id="ruleList"></div></div>
+<div class="card" style="margin-top:16px"><h2>Brand colors</h2>
+<div id="colors"></div>
+<div class="row" style="margin-top:8px"><button class="btn" id="addc">Add color</button><button class="btn p" id="save">Save brand kit</button><span id="saved" class="fn"></span></div></div>
+</section>
+
+<section class="view" id="editor">
+<h1>Text review</h1><p class="sub">
+    Paste your copy and run the pre-flight scan.
+    Hover over highlighted text for suggestions, or click to accept a fix or override the finding.
+</p>
+<div class="card">
+<div class="row" style="justify-content:space-between;margin-bottom:12px"><div class="leg"><span class="c">Critical claim</span><span class="t">Terminology</span><span class="n">Tone</span></div>
+<button class="btn p" id="scan">Run pre-flight scan</button></div>
+<div id="ed" class="ed" contenteditable="true" spellcheck="false"><p>Hey guys! Our new Green Glow serum is an all-natural formula with insane results.</p><p>It cures dry skin and gives guaranteed results in 7 days. Best of all, itΓÇÖs cheap and clinically proven.</p></div>
+<p class="sub" id="scanmsg" style="margin:12px 0 0"></p></div>
+</section>
+
+<section class="view" id="image"><h1>Image review</h1><p class="sub">Upload a creative for deterministic visual checks against brand palette and accessibility settings.</p>
+<div class="card"><label class="drop"><input type="file" accept="image/png,image/jpeg,image/webp" id="imgup"><b>Choose creative image</b>PNG, JPG or WEBP, max 10 MB<div class="fn" id="imgName"></div></label>
+<div class="grid" style="margin-top:14px"><input id="imgPrimary" type="text" value="#1E3A8A" placeholder="Primary color"><input id="imgPaper" type="text" value="#FFFFFF" placeholder="Paper color"><input id="imgInk" type="text" value="#111827" placeholder="Text ink"><input id="imgWordmark" type="text" value="#1E3A8A,#FFFFFF" placeholder="Wordmark colors, comma-separated"><input id="imgContrast" type="number" min="1" max="21" step=".1" value="4.5"><input id="imgAlt" type="text" placeholder="Alt text"></div>
+<div class="row"><button class="btn p" id="runImage">Run image review</button><button class="btn" id="loadImages">Refresh history</button><span id="imageMsg" class="fn"></span></div></div>
+<div class="grid"><div class="card"><h2>Preview</h2><img id="imagePreview" style="display:none;max-width:100%;max-height:400px" alt="Selected creative"></div><div class="card"><h2>Findings</h2><div id="imgl">No image reviewed.</div></div></div><div class="card"><h2>Saved image reviews</h2><div id="imageHistory"></div></div></section>
+
+<section class="view" id="queue">
+<h1>Approval queue</h1><p class="sub">Resolve every flagged phrase, then approve and export. Run a scan in Text review first.</p>
+<div class="card" id="qlist"></div>
+<div class="row"><button class="btn g" id="approve" disabled>Approve &amp; Export</button><span class="fn" id="qhint" style="color:var(--mut)"></span></div>
+<div id="badge"></div>
+</section>
+
+<section class="view" id="dashboard">
+<h1>Governance dashboard</h1><p class="sub">Where creators slip up, and which rules your team keeps overriding.</p>
+<div class="grid">
+<div class="card"><h2>Top 3 recurring mistakes</h2><div id="top"></div></div>
+<div class="card"><h2>Confusing guidelines</h2><p class="sub" style="margin-bottom:8px;font-size:14px">Rules reviewers override most often. Consider rewriting them.</p><div id="conf"></div></div>
+</div>
+<div class="grid"><div class="card"><div class="stat" id="s1">0</div>Fixes accepted</div><div class="card"><div class="stat" id="s2">0</div>Overrides</div></div><div class="card"><div class="row"><h2>Audit trail</h2><button class="btn" id="loadAudit">Refresh</button></div><p id="auditVerify"></p><div id="auditList"></div></div><div class="card"><h2>Recent text reviews</h2><div id="reviewHistory"></div></div>
+</section>
+</main>
+
+<div class="pop" id="pop"><div class="row" style="justify-content:space-between"><span class="tag" id="pt"></span><small id="pr" style="color:var(--mut)"></small></div>
+<div class="diff"><div class="o"><small>Original</small><span id="po"></span></div><div class="s"><small>Suggested fix</small><span id="ps"></span></div></div>
+<div class="row"><button class="btn p" id="pa">Accept Fix</button><button class="btn" id="pv">Override with Reason</button></div></div>
+
+<div class="modal" id="modal"><div class="card"><h2>Override with reason</h2><p class="sub" style="margin-bottom:10px;font-size:14px">Tell your team why this warning doesnΓÇÖt apply.</p>
+<textarea id="why" rows="3" placeholder="e.g. Approved by legal on 4 Nov"></textarea><p id="werr" style="color:var(--red);font-size:13px;margin:6px 0 0;display:none">A reason is required.</p>
+<div class="row" style="margin-top:12px;justify-content:flex-end"><button class="btn" id="wc">Cancel</button><button class="btn p" id="wo">Save override</button></div></div></div>
+
+<script>
+const $=s=>document.querySelector(s), API_BASE="http://127.0.0.1:8000";
+let authToken=sessionStorage.getItem("brandpilot_token"),activeBrandId=sessionStorage.getItem("brandpilot_brand_id"),currentReview=null,findings=[],accepted=0,overridden=0,selectedImage=null,pendingFinding=null;
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const say=(id,t)=>{const e=$("#"+id);if(e)e.textContent=t||""};
+async function api(path,opts={}){const h={...(opts.body instanceof FormData?{}:{"Content-Type":"application/json"}),...(authToken?{Authorization:`Bearer ${authToken}`}:{})};const r=await fetch(API_BASE+path,{...opts,headers:{...h,...opts.headers}});const t=await r.text();let d={};try{d=t?JSON.parse(t):{}}catch{d={detail:t}}if(!r.ok)throw Error(d.detail||`HTTP ${r.status}`);return d}
+function needAuth(){if(!authToken)throw Error("Sign in first.");}function needBrand(){needAuth();if(!activeBrandId)throw Error("Create or select a brand workspace.");}
+async function loadBrands(){const a=await api("/brands/"),sel=$("#brandSelect");sel.innerHTML="";a.forEach(b=>{const o=document.createElement("option");o.value=b.id;o.textContent=b.name;sel.append(o)});if(a.length){const b=a.find(x=>x.id===activeBrandId)||a[0];activeBrandId=b.id;sessionStorage.setItem("brandpilot_brand_id",b.id);sel.value=b.id;await loadRules()}else{activeBrandId=null;sessionStorage.removeItem("brandpilot_brand_id");say("brandMsg","Create a workspace to begin.")}}
+async function doLogin(){const d=await api("/auth/login",{method:"POST",body:JSON.stringify({email:$("#loginEmail").value.trim(),password:$("#loginPassword").value})});authToken=d.access_token;sessionStorage.setItem("brandpilot_token",authToken);const u=await api("/auth/me");$("#userInfo").textContent=`Signed in as ${u.full_name}`;await loadBrands();say("authMsg","Login successful.")}
+$("#loginBtn").onclick=async()=>{try{say("authMsg","Signing in...");await doLogin()}catch(e){say("authMsg",e.message)}};
+$("#registerBtn").onclick=async()=>{try{await api("/auth/register",{method:"POST",body:JSON.stringify({full_name:$("#regName").value.trim(),email:$("#regEmail").value.trim(),password:$("#regPassword").value})});say("authMsg","Account created. Sign in now.")}catch(e){say("authMsg",e.message)}};
+$("#logoutBtn").onclick=()=>{authToken=activeBrandId=null;sessionStorage.clear();say("authMsg","Signed out.")};
+$("#brandSelect").onchange=async e=>{activeBrandId=e.target.value;sessionStorage.setItem("brandpilot_brand_id",activeBrandId);try{await loadRules()}catch(x){say("ruleMsg",x.message)}};
+$("#createBrand").onclick=async()=>{try{needAuth();const name=$("#newBrandName").value.trim();if(!name)throw Error("Enter brand name.");const slug=name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");await api("/brands/",{method:"POST",body:JSON.stringify({name,slug})});await loadBrands();say("brandMsg","Workspace created.")}catch(e){say("brandMsg",e.message)}};
+async function loadRules(){needBrand();const a=await api(`/brands/${activeBrandId}/rules`);$("#ruleList").innerHTML=a.length?a.map(r=>`<div class="item"><div><b>${esc(r.title)}</b> <span class="tag">${esc(r.severity)}</span><p>${esc(r.category)} · ${esc(r.rule_code||"No code")}</p><p>${esc(r.description)}</p></div><div><button class="btn" data-toggle="${r.id}" data-active="${r.is_active}">${r.is_active?"Deactivate":"Activate"}</button> <button class="btn" data-delete="${r.id}">Delete</button></div></div>`).join(""):"No brand rules yet."}
+$("#addRule").onclick=async()=>{try{needBrand();const b={category:$("#ruleCategory").value.trim(),title:$("#ruleTitle").value.trim(),description:$("#ruleDescription").value.trim(),severity:$("#ruleSeverity").value,rule_code:$("#ruleCode").value.trim()||null};await api(`/brands/${activeBrandId}/rules`,{method:"POST",body:JSON.stringify(b)});["ruleCategory","ruleTitle","ruleDescription","ruleCode"].forEach(x=>$("#"+x).value="");await loadRules();say("ruleMsg","Rule saved.")}catch(e){say("ruleMsg",e.message)}};
+$("#refreshRules").onclick=()=>loadRules().catch(e=>say("ruleMsg",e.message));
+$("#ruleList").onclick=async e=>{const t=e.target.closest("[data-toggle]"),d=e.target.closest("[data-delete]");try{if(t)await api(`/rules/${t.dataset.toggle}`,{method:"PUT",body:JSON.stringify({is_active:t.dataset.active!=="true"})});else if(d)await api(`/rules/${d.dataset.delete}`,{method:"DELETE"});else return;await loadRules()}catch(x){say("ruleMsg",x.message)}};
+const views=["setup","editor","image","queue","dashboard","account"],ed=$("#ed"),pop=$("#pop");function route(){let h=location.hash.slice(1);if(!views.includes(h))h="setup";views.forEach(v=>$("#"+v).classList.toggle("on",v===h));document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on",a.hash==="#"+h));if(h==="queue")renderQueue();if(h==="dashboard")loadDashboard();if(h==="image")loadImageHistory().catch(e=>say("imageMsg",e.message))}addEventListener("hashchange",route);
+document.querySelectorAll("input[data-f]").forEach(i=>i.onchange=()=>$("#"+i.dataset.f).textContent=[...i.files].map(f=>f.name).join(", "));
+function addColor(v){const d=document.createElement("div");d.className="hex";d.innerHTML='<div class="sw"></div><input type="text" maxlength="7">';const t=d.querySelector("input"),sw=d.querySelector(".sw");t.value=v;t.oninput=()=>sw.style.background=/^#[0-9a-f]{6}$/i.test(t.value)?t.value:"transparent";t.oninput();$("#colors").append(d)}addColor("#6D28D9");addColor("#0E0E12");$("#addc").onclick=()=>addColor("");
+$("#save").onclick=()=>say("saved","Palette inputs saved for this session. Configure image review palette below.");
+$("#scan").onclick=async()=>{try{needBrand();const content=ed.innerText.trim();if(!content)throw Error("Enter text to review.");$("#scan").disabled=true;say("scanmsg","Submitting review...");currentReview=await api(`/brands/${activeBrandId}/reviews`,{method:"POST",body:JSON.stringify({content})});findings=(currentReview.findings||[]).map((f,i)=>({...f,id:i,status:"open"}));let pf;try{pf=await api(`/brands/${activeBrandId}/preflight`,{method:"POST",body:JSON.stringify({content,channel:"social"})})}catch(e){pf={error:e.message}}renderFindings();say("scanmsg",`${currentReview.summary} · Score ${currentReview.overall_score}/100 · Provider ${currentReview.provider} · ${findings.length} findings. ${pf.error?"Preflight: "+pf.error:`Deterministic preflight: ${pf.findings?.length||0} findings, risk ${pf.risk_level||"unknown"}.`}`);renderQueue()}catch(e){say("scanmsg",e.message)}finally{$("#scan").disabled=false}};
+function sc(s){return ["critical","high"].includes(String(s).toLowerCase())?"crit":s==="medium"?"term":"tone"}
+function renderFindings(){if(!findings.length)return;let html=esc(currentReview.content);findings.slice().sort((a,b)=>(b.original_text||"").length-(a.original_text||"").length).forEach(f=>{const phrase=esc(f.original_text||"");if(!phrase)return;const re=new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i");html=html.replace(re,m=>`<mark class="h ${sc(f.severity)}" data-id="${f.id}">${m}</mark>`)});ed.innerHTML=html.split(/\n/).map(x=>`<p>${x}</p>`).join("")}
+let activeFinding=null;ed.addEventListener("click",e=>{const m=e.target.closest("mark.h");if(!m)return;activeFinding=+m.dataset.id;const f=findings[activeFinding];$("#pt").textContent=f.severity;$("#pt").className="tag "+sc(f.severity);$("#pr").textContent=f.category+" · "+f.explanation;$("#po").textContent=f.original_text;$("#ps").textContent=f.suggestion;pop.style.display="block";const r=m.getBoundingClientRect();pop.style.top=(r.bottom+scrollY+8)+"px";pop.style.left=Math.max(8,Math.min(r.left+scrollX,innerWidth-pop.offsetWidth-8))+"px"});
+document.addEventListener("mousedown",e=>{if(!pop.contains(e.target)&&!e.target.closest("mark.h"))pop.style.display="none"});
+async function decision(i,kind,reason=null,replacement=null){const payload={finding_index:i,decision:kind,reason,replacement_text:replacement};await api(`/reviews/${currentReview.id}/decisions`,{method:"POST",body:JSON.stringify(payload)});findings[i].status=kind;findings[i].reason=reason;if(kind==="accepted")accepted++;else overridden++;renderQueue()}
+$("#pa").onclick=async()=>{try{const f=findings[activeFinding];if(!f.suggestion)throw Error("No replacement suggestion available.");await decision(activeFinding,"accepted",null,f.suggestion);pop.style.display="none"}catch(e){alert(e.message)}};
+$("#pv").onclick=()=>{pendingFinding=activeFinding;pop.style.display="none";$("#modal").classList.add("on")};$("#wc").onclick=()=>$("#modal").classList.remove("on");
+$("#wo").onclick=async()=>{const reason=$("#why").value.trim();if(!reason){$("#werr").style.display="block";return}try{await decision(pendingFinding,"overridden",reason,null);$("#modal").classList.remove("on")}catch(e){$("#werr").textContent=e.message;$("#werr").style.display="block"}};
+function renderQueue(){if(!findings.length){$("#qlist").textContent="Run a text review first.";$("#approve").disabled=true;return}$("#qlist").innerHTML=findings.map(f=>`<div class="item"><div><span class="tag ${sc(f.severity)}">${esc(f.severity)}</span> <b>${esc(f.category)}</b><p>${esc(f.original_text)} → ${esc(f.suggestion)}</p>${f.reason?`<p>Reason: ${esc(f.reason)}</p>`:""}</div><div>${f.status==="open"?`<button class="btn p" data-accept="${f.id}" ${!f.suggestion?"disabled":""}>Accept Fix</button> <button class="btn" data-override="${f.id}">Override</button>`:`<span class="tag ok">${esc(f.status)}</span>`}</div></div>`).join("");const n=findings.filter(f=>f.status==="open").length;$("#approve").disabled=n>0;say("qhint",n?`${n} unresolved`:"All decisions saved to backend.")}
+$("#qlist").onclick=async e=>{const a=e.target.closest("[data-accept]"),o=e.target.closest("[data-override]");try{if(a){const f=findings[+a.dataset.accept];await decision(f.id,"accepted",null,f.suggestion)}else if(o){pendingFinding=+o.dataset.override;$("#modal").classList.add("on")}}catch(x){alert(x.message)}};
+$("#approve").onclick=()=>$("#badge").innerHTML="<div class='badge'><b>Review resolved</b>All finding decisions have been saved and audited.</div>";
+$("#imgup").onchange=e=>{selectedImage=e.target.files[0]||null;say("imgName",selectedImage?.name);if(selectedImage){$("#imagePreview").src=URL.createObjectURL(selectedImage);$("#imagePreview").style.display="block"}};
+$("#runImage").onclick=async()=>{try{needBrand();if(!selectedImage)throw Error("Choose an image.");const fd=new FormData();fd.append("image",selectedImage);fd.append("palette",JSON.stringify({primary:$("#imgPrimary").value.trim(),paper:$("#imgPaper").value.trim()}));fd.append("text_ink",$("#imgInk").value.trim());fd.append("wordmark_colors",JSON.stringify($("#imgWordmark").value.split(",").map(x=>x.trim()).filter(Boolean)));fd.append("alt_text",$("#imgAlt").value.trim());fd.append("contrast_min",$("#imgContrast").value||"4.5");$("#runImage").disabled=true;say("imageMsg","Reviewing...");const r=await api(`/brands/${activeBrandId}/image-reviews`,{method:"POST",body:fd});renderImage(r);say("imageMsg","Image review saved.");await loadImageHistory()}catch(e){say("imageMsg",e.message)}finally{$("#runImage").disabled=false}};
+function renderImage(r){const fs=r.report?.findings||[];$("#imgl").innerHTML=`<p><b>${esc(r.filename)}</b> · ${fs.length} findings · ${esc(r.report?.max_severity||"none")}</p>`+(fs.length?fs.map(f=>`<div class="item"><div><b>${esc(f.title||f.rule||f.code||"Visual issue")}</b><p>${esc(f.explanation||f.message||f.description||"")}</p><small>${esc(f.severity||"")}</small></div></div>`).join(""):"No findings.")+`<p class="fn">These are deterministic palette and accessibility checks, not general-purpose visual AI recognition.</p>`}
+async function loadImageHistory(){if(!authToken||!activeBrandId)return;const a=await api(`/brands/${activeBrandId}/image-reviews`);$("#imageHistory").innerHTML=a.length?a.map(x=>`<div class="item"><div><b>${esc(x.filename)}</b><p>${esc(x.created_at)} · ${(x.report?.findings||[]).length} findings</p></div></div>`).join(""):"No saved image reviews."}
+$("#loadImages").onclick=()=>loadImageHistory().catch(e=>say("imageMsg",e.message));
+async function loadDashboard(){if(!authToken||!activeBrandId)return;$("#s1").textContent=accepted;$("#s2").textContent=overridden;try{const [logs,v,revs]=await Promise.all([api(`/brands/${activeBrandId}/audit-logs?limit=50`),api(`/brands/${activeBrandId}/audit-logs/verify`),api(`/brands/${activeBrandId}/reviews`)]);say("auditVerify",`Audit chain ${v.valid?"VALID":"CHECK"} · ${v.message||""}`);$("#auditList").innerHTML=logs.map(x=>`<div class="item"><div><b>${esc(x.action)}</b><p>${esc(x.entity_type)} · ${esc(x.created_at)}</p></div></div>`).join("")||"No audit events.";$("#reviewHistory").innerHTML=revs.map(x=>`<div class="item"><div><b>${esc(x.overall_status)} · ${x.overall_score}/100</b><p>${esc(x.summary)} · ${esc(x.created_at)}</p></div></div>`).join("")||"No reviews yet.";$("#top").textContent="Aggregate analytics are not currently exposed by the API.";$("#conf").textContent="Override analytics are not currently exposed by the API."}catch(e){say("auditVerify",e.message)}}
+$("#loadAudit").onclick=loadDashboard;
+async function init(){route();if(authToken){try{const u=await api("/auth/me");$("#userInfo").textContent=`Signed in as ${u.full_name}`;await loadBrands()}catch(e){say("authMsg","Session expired. Sign in again.")}}}
+init().catch(console.error);
+</script></body></html>

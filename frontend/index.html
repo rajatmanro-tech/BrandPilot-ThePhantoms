@@ -20,6 +20,7 @@ main{max-width:1100px;margin:auto;padding:28px 20px 60px}
 section.view{display:none}section.view.on{display:block}
 h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}h2{font-size:16px;margin:0 0 12px}
 .sub{color:var(--mut);margin:0 0 24px;max-width:62ch}
+.hint{display:block;color:var(--mut);font-size:12px;line-height:1.45;margin:5px 2px 0}.field{min-width:0}.guide{background:var(--goldbg);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 16px;color:var(--ink)}.guide b{display:block;margin-bottom:4px}.guide p{margin:0;color:var(--mut);font-size:14px}
 .card{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
 .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
 .drop{border:1.5px dashed var(--line);border-radius:10px;padding:18px;text-align:center;cursor:pointer;display:block;color:var(--mut)}
@@ -83,33 +84,33 @@ mark.done{background:none;border-color:transparent;border-bottom:2px dashed var(
 </section>
 <section class="view" id="setup">
 <h1>Brand setup</h1><p class="sub">Upload your brand assets once. Every scan checks creator content against them.</p>
+<div class="guide"><b>How to set up your brand</b><p>1. Upload your brand guide, approved claims and logo files. 2. Create a workspace. 3. Add clear rules that describe what content should or should not do. 4. Set your approved brand colors. These settings are used during content reviews.</p></div>
 <div class="grid">
 <label class="drop"><input type="file" accept=".pdf" data-f="f1"><b>Brand guide (PDF)</b>Click to choose a file<div class="fn" id="f1"></div></label>
 <label class="drop"><input type="file" accept=".csv" data-f="f2"><b>Approved claims (CSV)</b>Click to choose a file<div class="fn" id="f2"></div></label>
 <label class="drop"><input type="file" accept="image/*" multiple data-f="f3"><b>Logo images</b>PNG, SVG or JPG<div class="fn" id="f3"></div></label>
 </div>
 <div class="card"><h2>Workspace</h2><div class="row"><select id="brandSelect" style="min-width:220px;padding:10px"><option>Sign in first</option></select><input id="newBrandName" type="text" placeholder="New brand name" style="max-width:220px"><button class="btn" id="createBrand">Create brand</button></div><p id="brandMsg" class="fn"></p></div>
-<div class="card"><h2>Brand rules</h2><div class="grid"><input id="ruleCategory" type="text" placeholder="Category"><input id="ruleTitle" type="text" placeholder="Rule title"><input id="ruleCode" type="text" placeholder="Rule code (optional)"><select id="ruleSeverity"><option>low</option><option selected>medium</option><option>high</option><option>critical</option></select></div><textarea id="ruleDescription" rows="2" placeholder="Rule description"></textarea><div class="row"><button class="btn p" id="addRule">Add rule</button><button class="btn" id="refreshRules">Refresh rules</button><span id="ruleMsg" class="fn"></span></div><div id="ruleList"></div></div>
+<div class="card"><h2>Brand rules</h2><p class="sub">Add guidelines that BrandPilot should check in submitted content. Use one rule for each requirement.</p><div class="grid"><label class="field"><input id="ruleCategory" type="text" placeholder="Category"><small class="hint">Rule area, such as Tone, Claims, Terminology or Visual identity.</small></label><label class="field"><input id="ruleTitle" type="text" placeholder="Rule title"><small class="hint">A short, specific name, e.g. No unsupported medical claims.</small></label><label class="field"><input id="ruleCode" type="text" placeholder="Rule code (optional)"><small class="hint">Optional unique ID, e.g. CLM-001.</small></label><label class="field"><select id="ruleSeverity"><option>low</option><option selected>medium</option><option>high</option><option>critical</option></select><small class="hint">Choose how serious it is if this rule is broken.</small></label></div><label class="field"><textarea id="ruleDescription" rows="2" placeholder="Rule description"></textarea><small class="hint">Explain what content must or must not do. Example: Do not claim a product cures a condition unless the claim is approved and supported by evidence.</small></label><div class="row"><button class="btn p" id="addRule">Add rule</button><button class="btn" id="refreshRules">Refresh rules</button><span id="ruleMsg" class="fn"></span></div><div id="ruleList"></div></div>
 <div class="card" style="margin-top:16px"><h2>Brand colors</h2>
 <div id="colors"></div>
 <div class="row" style="margin-top:8px"><button class="btn" id="addc">Add color</button><button class="btn p" id="save">Save brand kit</button><span id="saved" class="fn"></span></div></div>
 </section>
 
 <section class="view" id="editor">
-<h1>Text review</h1><p class="sub">
-    Paste your copy and run the pre-flight scan.
-    Hover over highlighted text for suggestions, or click to accept a fix or override the finding.
-</p>
+<h1>Text review</h1><p class="sub">Paste your copy and run the pre-flight scan. Click highlighted findings to review suggested fixes or record an override.</p>
+<div class="guide"><b>How to run a text review</b><p>Paste the complete text you plan to publish into the editor below, then select <b>Run pre-flight scan</b>. BrandPilot compares it with your workspace rules and flags possible issues. Select a highlighted phrase to inspect its explanation and suggested correction.</p></div>
 <div class="card">
 <div class="row" style="justify-content:space-between;margin-bottom:12px"><div class="leg"><span class="c">Critical claim</span><span class="t">Terminology</span><span class="n">Tone</span></div>
 <button class="btn p" id="scan">Run pre-flight scan</button></div>
-<div id="ed" class="ed" contenteditable="true" spellcheck="false"><p>Hey guys! Our new Green Glow serum is an all-natural formula with insane results.</p><p>It cures dry skin and gives guaranteed results in 7 days. Best of all, itΓÇÖs cheap and clinically proven.</p></div>
+<div class="hint" style="margin:0 0 8px">Enter or paste the content you want to check. The sample text is provided as a starting point; replace it with your own copy.</div><div id="ed" class="ed" contenteditable="true" spellcheck="false"><p>Hey guys! Our new Green Glow serum is an all-natural formula with insane results.</p><p>It cures dry skin and gives guaranteed results in 7 days. Best of all, itΓÇÖs cheap and clinically proven.</p></div>
 <p class="sub" id="scanmsg" style="margin:12px 0 0"></p></div>
 </section>
 
 <section class="view" id="image"><h1>Image review</h1><p class="sub">Upload a creative for deterministic visual checks against brand palette and accessibility settings.</p>
+<div class="guide"><b>How to run an image review</b><p>Choose a PNG, JPG or WEBP creative, enter the approved brand colors and accessibility settings below, then select <b>Run image review</b>. The checks compare colors and contrast against the values you provide. They do not perform general-purpose image recognition.</p></div>
 <div class="card"><label class="drop"><input type="file" accept="image/png,image/jpeg,image/webp" id="imgup"><b>Choose creative image</b>PNG, JPG or WEBP, max 10 MB<div class="fn" id="imgName"></div></label>
-<div class="grid" style="margin-top:14px"><input id="imgPrimary" type="text" value="#1E3A8A" placeholder="Primary color"><input id="imgPaper" type="text" value="#FFFFFF" placeholder="Paper color"><input id="imgInk" type="text" value="#111827" placeholder="Text ink"><input id="imgWordmark" type="text" value="#1E3A8A,#FFFFFF" placeholder="Wordmark colors, comma-separated"><input id="imgContrast" type="number" min="1" max="21" step=".1" value="4.5"><input id="imgAlt" type="text" placeholder="Alt text"></div>
+<div class="grid" style="margin-top:14px"><label class="field"><input id="imgPrimary" type="text" value="#1E3A8A" placeholder="Primary color"><small class="hint">Main approved brand color in HEX format, e.g. #1E3A8A.</small></label><label class="field"><input id="imgPaper" type="text" value="#FFFFFF" placeholder="Paper color"><small class="hint">Approved background or canvas color in HEX format.</small></label><label class="field"><input id="imgInk" type="text" value="#111827" placeholder="Text ink"><small class="hint">Approved text color in HEX format.</small></label><label class="field"><input id="imgWordmark" type="text" value="#1E3A8A,#FFFFFF" placeholder="Wordmark colors, comma-separated"><small class="hint">Approved logo colors, separated by commas, e.g. #1E3A8A,#FFFFFF.</small></label><label class="field"><input id="imgContrast" type="number" min="1" max="21" step=".1" value="4.5"><small class="hint">Minimum contrast ratio. 4.5 is the usual WCAG AA target for normal text.</small></label><label class="field"><input id="imgAlt" type="text" placeholder="Alt text"><small class="hint">Short description of the image for people using screen readers.</small></label></div>
 <div class="row"><button class="btn p" id="runImage">Run image review</button><button class="btn" id="loadImages">Refresh history</button><span id="imageMsg" class="fn"></span></div></div>
 <div class="grid"><div class="card"><h2>Preview</h2><img id="imagePreview" style="display:none;max-width:100%;max-height:400px" alt="Selected creative"></div><div class="card"><h2>Findings</h2><div id="imgl">No image reviewed.</div></div></div><div class="card"><h2>Saved image reviews</h2><div id="imageHistory"></div></div></section>
 

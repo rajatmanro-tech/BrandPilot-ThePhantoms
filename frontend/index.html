@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>BrandPilot ΓÇô Brand compliance review</title>
+<title>BrandPilot – Brand compliance review</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 --bg:#F7F6FA;--surf:#fff;--ink:#0E0E12;--mut:#6B6880;--line:#E5E2EE;--brand:#6D28D9;--onbrand:#fff;--gold:#8B5CF6;--goldbg:#F1EAFD;
@@ -103,7 +103,7 @@ mark.done{background:none;border-color:transparent;border-bottom:2px dashed var(
 <div class="card">
 <div class="row" style="justify-content:space-between;margin-bottom:12px"><div class="leg"><span class="c">Critical claim</span><span class="t">Terminology</span><span class="n">Tone</span></div>
 <button class="btn p" id="scan">Run pre-flight scan</button></div>
-<div class="hint" style="margin:0 0 8px">Enter or paste the content you want to check. The sample text is provided as a starting point; replace it with your own copy.</div><div id="ed" class="ed" contenteditable="true" spellcheck="false"><p>Hey guys! Our new Green Glow serum is an all-natural formula with insane results.</p><p>It cures dry skin and gives guaranteed results in 7 days. Best of all, itΓÇÖs cheap and clinically proven.</p></div>
+<div class="hint" style="margin:0 0 8px">Enter or paste the content you want to check. The sample text is provided as a starting point; replace it with your own copy.</div><div id="ed" class="ed" contenteditable="true" spellcheck="false"><p>Hey guys! Our new Green Glow serum is an all-natural formula with insane results.</p><p>It cures dry skin and gives guaranteed results in 7 days. Best of all, it’s cheap and clinically proven.</p></div>
 <p class="sub" id="scanmsg" style="margin:12px 0 0"></p></div>
 </section>
 
@@ -155,12 +155,56 @@ mark.done{background:none;border-color:transparent;border-bottom:2px dashed var(
 <div class="row" style="margin-top:12px"><button class="btn p" id="submitExternal">Submit for review</button><span class="fn" id="externalMsg"></span></div></div>
 <div class="card" id="externalResult" style="display:none"><h2>Review result</h2><div class="grid"><div><small class="hint">Status</small><div class="stat" id="externalStatus">-</div></div><div><small class="hint">Score</small><div class="stat" id="externalScore">-</div></div></div><p id="externalSummary"></p><p class="hint" id="externalReviewId"></p></div>
 </section>
+
+
 <section class="view" id="documents">
-<h1>Document review</h1><p class="sub">PDF/DOCX ingestion and approved export.</p>
-<div class="guide"><b>Backend integration still required</b><p>The current files do not provide the document upload, extraction, review or approved-export API contract. The UI is prepared, but submission is disabled until those endpoints are available.</p></div>
-<div class="card"><label class="drop"><input id="documentFile" type="file" accept=".pdf,.docx"><b>Choose PDF or DOCX</b>Maximum 10 MB<div class="fn" id="documentFileName"></div></label><div class="row"><button class="btn p" id="documentReviewButton" disabled>Review document</button><span class="fn" id="documentMsg">Waiting for document API.</span></div></div>
-<div class="card"><h2>Document results</h2><div id="documentResults">No document reviewed.</div></div>
+<h1>Document review</h1>
+<p class="sub">Upload PDF or DOCX documents, resolve review findings, approve the document and download the approved copy.</p>
+
+<div class="card">
+  <label class="drop">
+    <input id="documentFile" type="file" accept=".pdf,.docx">
+    <b>Choose PDF or DOCX</b>
+    Maximum file size: 10 MB
+    <div class="fn" id="documentFileName"></div>
+  </label>
+
+  <div class="row" style="margin-top:14px">
+    <button class="btn p" id="documentReviewButton" disabled>
+      Review document
+    </button>
+    <span class="fn" id="documentMsg">Choose a document to begin.</span>
+  </div>
+</div>
+
+<div class="card" id="documentResultsCard" style="display:none">
+  <h2>Review results</h2>
+
+  <div class="grid">
+    <div><small class="hint">Document</small><b id="docName">-</b></div>
+    <div><small class="hint">Approval status</small><b id="docApproval">-</b></div>
+    <div><small class="hint">AI review status</small><b id="docStatus">-</b></div>
+    <div><small class="hint">Compliance score</small><div class="stat" id="docScore">-</div></div>
+  </div>
+
+  <p id="docSummary"></p>
+  <p class="hint" id="docId"></p>
+
+  <h2>Detected findings</h2>
+  <div id="docFindings"></div>
+
+  <div class="row" style="margin-top:18px">
+    <button class="btn g" id="approveDocument" disabled>
+      Approve document
+    </button>
+    <button class="btn p" id="exportDocument" disabled>
+      Download approved document
+    </button>
+  </div>
+  <p class="hint" id="documentApprovalMsg"></p>
+</div>
 </section>
+
 
 </main>
 
@@ -168,7 +212,7 @@ mark.done{background:none;border-color:transparent;border-bottom:2px dashed var(
 <div class="diff"><div class="o"><small>Original</small><span id="po"></span></div><div class="s"><small>Suggested fix</small><span id="ps"></span></div></div>
 <div class="row"><button class="btn p" id="pa">Accept Fix</button><button class="btn" id="pv">Override with Reason</button></div></div>
 
-<div class="modal" id="modal"><div class="card"><h2>Override with reason</h2><p class="sub" style="margin-bottom:10px;font-size:14px">Tell your team why this warning doesnΓÇÖt apply.</p>
+<div class="modal" id="modal"><div class="card"><h2>Override with reason</h2><p class="sub" style="margin-bottom:10px;font-size:14px">Tell your team why this warning doesn’t apply.</p>
 <textarea id="why" rows="3" placeholder="e.g. Approved by legal on 4 Nov"></textarea><p id="werr" style="color:var(--red);font-size:13px;margin:6px 0 0;display:none">A reason is required.</p>
 <div class="row" style="margin-top:12px;justify-content:flex-end"><button class="btn" id="wc">Cancel</button><button class="btn p" id="wo">Save override</button></div></div></div>
 
@@ -195,7 +239,7 @@ document.querySelectorAll("input[data-f]").forEach(i=>i.onchange=()=>$("#"+i.dat
 function addColor(v){const d=document.createElement("div");d.className="hex";d.innerHTML='<div class="sw"></div><input type="text" maxlength="7">';const t=d.querySelector("input"),sw=d.querySelector(".sw");t.value=v;t.oninput=()=>sw.style.background=/^#[0-9a-f]{6}$/i.test(t.value)?t.value:"transparent";t.oninput();$("#colors").append(d)}addColor("#6D28D9");addColor("#0E0E12");$("#addc").onclick=()=>addColor("");
 $("#save").onclick=()=>say("saved","Palette inputs saved for this session. Configure image review palette below.");
 $("#scan").onclick=async()=>{try{needBrand();const content=ed.innerText.trim();if(!content)throw Error("Enter text to review.");$("#scan").disabled=true;say("scanmsg","Submitting review...");currentReview=await api(`/brands/${activeBrandId}/reviews`,{method:"POST",body:JSON.stringify({content})});findings=(currentReview.findings||[]).map((f,i)=>({...f,id:i,status:"open"}));let pf;try{pf=await api(`/brands/${activeBrandId}/preflight`,{method:"POST",body:JSON.stringify({content,channel:"social"})})}catch(e){pf={error:e.message}}renderFindings();say("scanmsg",`${currentReview.summary} · Score ${currentReview.overall_score}/100 · Provider ${currentReview.provider} · ${findings.length} findings. ${pf.error?"Preflight: "+pf.error:`Deterministic preflight: ${pf.findings?.length||0} findings, risk ${pf.risk_level||"unknown"}.`}`);renderQueue()}catch(e){say("scanmsg",e.message)}finally{$("#scan").disabled=false}};
-function sc(s){return ["critical","high"].includes(String(s).toLowerCase())?"crit":s==="medium"?"term":"tone"}
+function sc(s){const v=String(s||"").toLowerCase();return ["critical","high"].includes(v)?"crit":v==="medium"?"term":"tone"}
 function renderFindings(){if(!findings.length)return;let html=esc(currentReview.content);findings.slice().sort((a,b)=>(b.original_text||"").length-(a.original_text||"").length).forEach(f=>{const phrase=esc(f.original_text||"");if(!phrase)return;const re=new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i");html=html.replace(re,m=>`<mark class="h ${sc(f.severity)}" data-id="${f.id}">${m}</mark>`)});ed.innerHTML=html.split(/\n/).map(x=>`<p>${x}</p>`).join("")}
 let activeFinding=null;ed.addEventListener("click",e=>{const m=e.target.closest("mark.h");if(!m)return;activeFinding=+m.dataset.id;const f=findings[activeFinding];$("#pt").textContent=f.severity;$("#pt").className="tag "+sc(f.severity);$("#pr").textContent=f.category+" · "+f.explanation;$("#po").textContent=f.original_text;$("#ps").textContent=f.suggestion;pop.style.display="block";const r=m.getBoundingClientRect();pop.style.top=(r.bottom+scrollY+8)+"px";pop.style.left=Math.max(8,Math.min(r.left+scrollX,innerWidth-pop.offsetWidth-8))+"px"});
 document.addEventListener("mousedown",e=>{if(!pop.contains(e.target)&&!e.target.closest("mark.h"))pop.style.display="none"});
@@ -278,14 +322,270 @@ $("#submitExternal").onclick = async () => {
   } catch(e) { say("externalMsg",e.message); } finally { $("#submitExternal").disabled=false; }
 };
 
-// Validate document selection; do not fake an API integration that has not been specified.
-$("#documentFile").onchange=e=>{
-  const f=e.target.files[0]||null; say("documentFileName",f?`${f.name} · ${(f.size/1048576).toFixed(2)} MB`:"");
-  const valid=f&&/\\.(pdf|docx)$/i.test(f.name)&&f.size>0&&f.size<=10*1048576;
-  $("#documentReviewButton").disabled=!valid;
-  if(f&&!valid)say("documentFileName","Choose a non-empty PDF/DOCX file no larger than 10 MB.");
+/* DOCUMENT UPLOAD, REVIEW, DECISIONS, APPROVAL AND EXPORT */
+
+let selectedDocument = null;
+let activeDocumentId = null;
+let activeDocumentReviewId = null;
+let documentFindings = [];
+let documentIsApproved = false;
+
+function documentFileIsValid(file) {
+  return Boolean(
+    file &&
+    /\.(pdf|docx)$/i.test(file.name) &&
+    file.size > 0 &&
+    file.size <= 10 * 1024 * 1024
+  );
+}
+
+function renderDocumentFindings() {
+  const host = $("#docFindings");
+
+  if (!documentFindings.length) {
+    host.innerHTML = "<p>No findings detected. The document can be approved.</p>";
+    $("#approveDocument").disabled = !activeDocumentId || documentIsApproved;
+    return;
+  }
+
+  host.innerHTML = documentFindings.map((f, index) => `
+    <div class="item">
+      <div style="min-width:0;flex:1">
+        <span class="tag ${sc(f.severity)}">${esc(f.severity || "info")}</span>
+        <b>${esc(f.category || "General")}</b>
+        <p><b>Issue:</b> ${esc(f.issue || f.title || "Potential guideline violation")}</p>
+        <p>${esc(f.explanation || "")}</p>
+        <p><b>Original text:</b> ${esc(f.original_text || "Not provided")}</p>
+        <p><b>Suggested correction:</b> ${esc(f.suggestion || "No suggestion provided")}</p>
+        <p><b>Decision:</b> ${esc(f.status === "open" ? "Pending" : f.status)}</p>
+        ${f.reason ? `<p><b>Override reason:</b> ${esc(f.reason)}</p>` : ""}
+      </div>
+      <div class="row">
+        ${f.status === "open" ? `
+          <button class="btn p" data-doc-accept="${index}" ${!f.suggestion ? "disabled" : ""}>Accept fix</button>
+          <button class="btn" data-doc-override="${index}">Override</button>
+        ` : `<span class="tag ok">${esc(f.status)}</span>`}
+      </div>
+    </div>
+  `).join("");
+
+  const allResolved = documentFindings.every(f => f.status !== "open");
+  $("#approveDocument").disabled = !activeDocumentId || !allResolved || documentIsApproved;
+}
+
+$("#docFindings").addEventListener("click", async event => {
+  const acceptButton = event.target.closest("[data-doc-accept]");
+  const overrideButton = event.target.closest("[data-doc-override]");
+  if (!acceptButton && !overrideButton) return;
+
+  const index = Number(acceptButton?.dataset.docAccept ?? overrideButton?.dataset.docOverride);
+  const finding = documentFindings[index];
+  if (!finding || !activeDocumentReviewId) return;
+
+  let decision;
+  let reason = null;
+  let replacement = null;
+
+  if (acceptButton) {
+    if (!finding.suggestion) return;
+    decision = "accepted";
+    replacement = finding.suggestion;
+  } else {
+    reason = prompt("Enter a reason for overriding this finding:");
+    if (reason === null) return;
+    reason = reason.trim();
+    if (!reason) {
+      say("documentApprovalMsg", "An override reason is required.");
+      return;
+    }
+    decision = "overridden";
+  }
+
+  acceptButton && (acceptButton.disabled = true);
+  overrideButton && (overrideButton.disabled = true);
+  say("documentApprovalMsg", "Saving finding decision...");
+
+  try {
+    await api(`/reviews/${activeDocumentReviewId}/decisions`, {
+      method: "POST",
+      body: JSON.stringify({
+        finding_index: index,
+        decision,
+        reason,
+        replacement_text: replacement
+      })
+    });
+
+    finding.status = decision;
+    finding.reason = reason;
+    renderDocumentFindings();
+    say("documentApprovalMsg", "Decision saved.");
+  } catch (error) {
+    say("documentApprovalMsg", error.message || "Could not save decision.");
+    renderDocumentFindings();
+  }
+});
+
+$("#documentFile").addEventListener("change", event => {
+  selectedDocument = event.target.files[0] || null;
+  const valid = documentFileIsValid(selectedDocument);
+
+  activeDocumentId = null;
+  activeDocumentReviewId = null;
+  documentFindings = [];
+  documentIsApproved = false;
+
+  $("#documentResultsCard").style.display = "none";
+  $("#approveDocument").disabled = true;
+  $("#exportDocument").disabled = true;
+  $("#documentReviewButton").disabled = !valid;
+
+  say(
+    "documentFileName",
+    selectedDocument
+      ? `${selectedDocument.name} (${(selectedDocument.size / 1048576).toFixed(2)} MB)`
+      : ""
+  );
+
+  if (selectedDocument && !valid) {
+    say("documentFileName", "Invalid file. Choose a non-empty PDF/DOCX file no larger than 10 MB.");
+  }
+
+  say("documentMsg", valid ? "Ready to review." : "Choose a valid PDF or DOCX file.");
+  say("documentApprovalMsg", "");
+});
+
+$("#documentReviewButton").onclick = async () => {
+  const button = $("#documentReviewButton");
+
+  try {
+    needBrand();
+
+    if (!documentFileIsValid(selectedDocument)) {
+      throw Error("Choose a valid, non-empty PDF or DOCX file no larger than 10 MB.");
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedDocument);
+
+    button.disabled = true;
+    say("documentMsg", "Uploading and reviewing document...");
+    $("#documentResultsCard").style.display = "none";
+
+    const result = await api(`/brands/${activeBrandId}/documents`, {
+      method: "POST",
+      body: formData
+    });
+
+    const uploadedDocument = result.document;
+    const review = result.review;
+
+    if (!uploadedDocument?.id || !review?.id) {
+      throw Error("The server response is missing the document or review ID.");
+    }
+
+    activeDocumentId = uploadedDocument.id;
+    activeDocumentReviewId = review.id;
+    documentIsApproved = String(uploadedDocument.approval_status).toLowerCase() === "approved";
+    documentFindings = (review.findings || []).map(f => ({ ...f, status: "open", reason: null }));
+
+    $("#docName").textContent = uploadedDocument.filename || selectedDocument.name;
+    $("#docApproval").textContent = uploadedDocument.approval_status || "pending";
+    $("#docStatus").textContent = review.overall_status || "reviewed";
+    $("#docScore").textContent = review.overall_score == null ? "-" : `${review.overall_score}/100`;
+    $("#docSummary").textContent = review.summary || "";
+    $("#docId").textContent = `Document ID: ${uploadedDocument.id}`;
+
+    renderDocumentFindings();
+    $("#documentResultsCard").style.display = "block";
+
+    $("#approveDocument").disabled =
+      documentIsApproved || documentFindings.some(f => f.status === "open");
+    $("#exportDocument").disabled = !documentIsApproved;
+
+    say(
+      "documentMsg",
+      documentFindings.length
+        ? `Review completed. Resolve all ${documentFindings.length} finding(s) before approval.`
+        : "Review completed. No findings detected; the document is ready for approval."
+    );
+    say("documentApprovalMsg", "");
+  } catch (error) {
+    say("documentMsg", error.message || "Document review failed.");
+  } finally {
+    button.disabled = !documentFileIsValid(selectedDocument);
+  }
 };
-$("#documentReviewButton").onclick=()=>say("documentMsg","Cannot submit yet: connect the document-ingestion endpoint first.");
+
+$("#approveDocument").onclick = async () => {
+  try {
+    needAuth();
+    if (!activeDocumentId) throw Error("Review a document first.");
+    if (documentFindings.some(f => f.status === "open")) {
+      throw Error("Resolve every finding before approving this document.");
+    }
+
+    $("#approveDocument").disabled = true;
+    say("documentApprovalMsg", "Approving document...");
+
+    const result = await api(`/documents/${activeDocumentId}/approve`, {
+      method: "POST"
+    });
+
+    documentIsApproved = true;
+    $("#docApproval").textContent = result.approval_status || "approved";
+    $("#approveDocument").disabled = true;
+    $("#exportDocument").disabled = false;
+    say("documentApprovalMsg", "Document approved. You can now download the approved copy.");
+  } catch (error) {
+    $("#approveDocument").disabled = !activeDocumentId ||
+      documentFindings.some(f => f.status === "open") || documentIsApproved;
+    say("documentApprovalMsg", error.message || "Document approval failed.");
+  }
+};
+
+$("#exportDocument").onclick = async () => {
+  try {
+    needAuth();
+    if (!activeDocumentId || !documentIsApproved) {
+      throw Error("Approve the document before exporting it.");
+    }
+
+    $("#exportDocument").disabled = true;
+    say("documentApprovalMsg", "Preparing approved document...");
+
+    const response = await fetch(`${API_BASE}/documents/${activeDocumentId}/export`, {
+      method: "GET",
+      headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
+    });
+
+    if (!response.ok) {
+      let detail = `Export failed (HTTP ${response.status}).`;
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch (_) {}
+      throw Error(detail);
+    }
+
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const baseName = (selectedDocument?.name || "document").replace(/[^\w.\-]+/g, "_");
+    link.href = objectUrl;
+    link.download = `APPROVED_${baseName}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+
+    say("documentApprovalMsg", "Approved document downloaded.");
+  } catch (error) {
+    say("documentApprovalMsg", error.message || "Could not export approved document.");
+  } finally {
+    $("#exportDocument").disabled = !documentIsApproved;
+  }
+};
 
 async function init(){route();if(authToken){try{const u=await api("/auth/me");$("#userInfo").textContent=`Signed in as ${u.full_name}`;await loadBrands()}catch(e){say("authMsg","Session expired. Sign in again.")}}}
 init().catch(console.error);

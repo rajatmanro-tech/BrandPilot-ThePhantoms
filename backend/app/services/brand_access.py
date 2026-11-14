@@ -1,4 +1,3 @@
-
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -16,8 +15,8 @@ def authorize_brand_action(
     permission: str,
 ) -> BrandMembership:
     statement = select(BrandMembership).where(
-        BrandMembership.brand_id == brand_id,
         BrandMembership.user_id == user_id,
+        BrandMembership.brand_id == brand_id,
     )
 
     membership = db.scalar(statement)

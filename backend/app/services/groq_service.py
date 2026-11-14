@@ -1,7 +1,8 @@
 
 import json
+import traceback
 
-from openai import OpenAI, OpenAIError, BadRequestError
+from openai import OpenAI
 
 from app.core.config import settings
 from app.services.gemini_service import GeminiReviewResult
@@ -10,30 +11,51 @@ from app.services.gemini_service import GeminiReviewResult
 client = OpenAI(
     api_key=settings.GROQ_API_KEY,
     base_url="https://api.groq.com/openai/v1",
-    timeout=45.0,
+    timeout=60.0,
     max_retries=1,
 )
 
 
-def make_groq_compatible(schema: dict) -> dict:
-    """Convert Pydantic JSON Schema into Groq-compatible strict schema."""
+def extract_json(text: str) -> dict:
+    """Extract a JSON object from the model response."""
 
-    if isinstance(schema, dict):
-        if schema.get("type") == "object":
-            properties = schema.get("properties", {})
-            schema["additionalProperties"] = False
-            schema["required"] = list(properties.keys())
+    text = text.strip()
 
-        for value in schema.values():
-            if isinstance(value, dict):
-                make_groq_compatible(value)
+    if text.startswith("```"):
+        lines = text.splitlines()
+        if lines[-1].strip().startswith("```"):
+            text = "\n".join(lines[1:-1]).strip()
 
-            elif isinstance(value, list):
-                for item in value:
-                    if isinstance(item, dict):
-                        make_groq_compatible(item)
+    start = text.find("{")
+    if start == -1:
+        raise ValueError("No JSON object found in Groq response.")
 
-    return schema
+    depth = 0
+    in_string = False
+    escaped = False
+
+    for index in range(start, len(text)):
+        char = text[index]
+
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+        else:
+            if char == '"':
+                in_string = True
+            elif char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+
+                if depth == 0:
+                    return json.loads(text[start:index + 1])
+
+    raise ValueError("Groq returned incomplete JSON.")
 
 
 def review_content_groq(
@@ -49,12 +71,10 @@ def review_content_groq(
         for rule in brand_rules
     )
 
-    schema = make_groq_compatible(
-        GeminiReviewResult.model_json_schema()
-    )
+    schema = GeminiReviewResult.model_json_schema()
 
     prompt = f"""
-You are a precise and consistent brand governance reviewer.
+You are a precise brand governance reviewer.
 
 Review the submitted content against the supplied brand rules.
 
@@ -64,27 +84,26 @@ BRAND RULES:
 CONTENT:
 {content}
 
-EVALUATE:
-1. Tone and brand voice.
-2. Terminology consistency.
-3. Unsupported or misleading factual claims.
-4. Messaging and brand consistency.
-5. Accessibility.
+REQUIRED JSON SCHEMA:
+{json.dumps(schema, ensure_ascii=False)}
 
-STRICT INSTRUCTIONS:
+INSTRUCTIONS:
+- Return exactly one JSON object.
+- Follow the supplied schema.
+- Include every required field.
+- Use correct field names and data types.
+- Use only allowed enum values.
+- Do not include Markdown or code fences.
+- Do not include text outside the JSON object.
 - Report only genuine, identifiable issues.
 - Do not invent violations.
 - Every finding must be supported by an exact excerpt.
 - Use exact text from the submitted content for original_text.
 - Only report issues connected to an applicable brand rule.
-- Do not report subjective preferences as violations.
 - Avoid duplicate findings.
-- Apply severity consistently.
 - Keep explanations and suggestions concise.
-- Return valid JSON matching the required schema.
-- Do not include Markdown or additional fields.
 
-SCORING RUBRIC:
+SCORING:
 - Start with 100 points.
 - Critical issue: deduct 25 points.
 - High issue: deduct 15 points.
@@ -92,39 +111,42 @@ SCORING RUBRIC:
 - Low issue: deduct 3 points.
 - Do not deduct points for duplicate findings.
 - Final score cannot be below 0.
-- Apply deductions consistently.
 - A score of 100 means fully compliant.
 """
 
-    for attempt in range(2):
-        try:
-            current_prompt = prompt
+    last_error = None
 
-            if attempt == 1:
-                current_prompt += """
+    for attempt in range(2):
+
+        current_prompt = prompt
+
+        if attempt == 1:
+            current_prompt += f"""
 
 RETRY INSTRUCTIONS:
-Your previous response failed JSON validation.
-Follow the required schema exactly.
-Include every required field.
-Use correct data types and allowed severity values.
-Return only valid JSON.
+Your previous response failed validation.
+Return a complete JSON object matching the schema.
+Correct the previous error.
+
+Previous error:
+{str(last_error)[:1000]}
 """
 
-            print(
-                f"Groq review attempt {attempt + 1}/2...",
-                flush=True,
-            )
+        print(
+            f"Groq review attempt {attempt + 1}/2...",
+            flush=True,
+        )
 
+        try:
             response = client.chat.completions.create(
                 model=settings.GROQ_MODEL,
                 messages=[
                     {
                         "role": "system",
                         "content": (
-                            "You are a precise and consistent brand "
-                            "governance reviewer. Return only valid "
-                            "structured JSON matching the required schema."
+                            "You are a brand governance reviewer. "
+                            "Return only one valid JSON object. "
+                            "Follow the supplied schema exactly."
                         ),
                     },
                     {
@@ -132,53 +154,44 @@ Return only valid JSON.
                         "content": current_prompt,
                     },
                 ],
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "brand_review",
-                        "strict": True,
-                        "schema": schema,
-                    },
-                },
-                temperature=0,
-                max_tokens=1800,
+                max_completion_tokens=4000,
+                reasoning_effort="low",
             )
 
-            result = response.choices[0].message.content
-
-            if not result:
-                raise ValueError("Groq returned an empty response.")
-
-            return GeminiReviewResult.model_validate_json(result)
-
-        except BadRequestError as error:
-            error_details = getattr(error, "body", {}) or {}
-            error_code = error_details.get("code")
-
+        except Exception as error:
             print(
-                f"Groq API error: {error_code} - {error}",
+                f"GROQ API REQUEST FAILED: {type(error).__name__}: {error}",
                 flush=True,
             )
+            traceback.print_exc()
+            raise
 
-            if error_code == "json_validate_failed" and attempt == 0:
-                print(
-                    "Retrying Groq due to invalid JSON...",
-                    flush=True,
+        try:
+            message = response.choices[0].message
+            output = message.content
+
+            if not output:
+                raise ValueError(
+                    f"Groq returned empty content. "
+                    f"Finish reason: {response.choices[0].finish_reason}"
                 )
-                continue
 
-            raise
+            data = extract_json(output)
+            result = GeminiReviewResult.model_validate(data)
 
-        except ValueError as error:
+            print("Groq review completed successfully.", flush=True)
+            return result
+
+        except Exception as error:
+            last_error = error
+
             print(
-                f"Groq validation failed on attempt {attempt + 1}: {error}",
+                f"GROQ RESPONSE VALIDATION FAILED: "
+                f"{type(error).__name__}: {error}",
                 flush=True,
             )
+            traceback.print_exc()
 
-            if attempt == 1:
-                raise
-
-        except OpenAIError:
-            raise
-
-    raise RuntimeError("Groq review failed after retries.")
+    raise ValueError(
+        f"Groq failed after two attempts. Last error: {last_error}"
+    )

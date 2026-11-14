@@ -59,10 +59,10 @@ mark.done{background:none;border-color:transparent;border-bottom:2px dashed var(
 .badge{border:3px solid var(--brand);border-radius:14px;padding:20px;text-align:center;margin-top:12px;background:var(--goldbg)}
 .badge b{font-size:20px;color:var(--brand);display:block}
 .stat{font-size:28px;font-weight:700}
-@media(max-width:640px){.diff{grid-template-columns:1fr}}
+@media(max-width:640px){.diff{grid-template-columns:1fr}.bar{gap:10px;padding:10px 12px}nav{width:100%;padding-bottom:3px}main{padding:20px 12px 44px}.card{padding:15px}}
 </style></head><body>
 <header><div class="bar"><div class="logo"><i></i>BrandPilot</div>
-<nav id="nav"><a href="#setup">Brand setup</a><a href="#editor">Text review</a><a href="#image">Image review</a><a href="#queue">Approval queue</a><a href="#dashboard">Governance</a><a href="#account">Account</a></nav></div></header>
+<nav id="nav"><a href="#setup">Brand setup</a><a href="#editor">Text review</a><a href="#image">Image review</a><a href="#queue">Approval queue</a><a href="#contributors">Contributors</a><a href="#external">External submit</a><a href="#documents">Documents</a><a href="#dashboard">Governance</a><a href="#account">Account</a></nav></div></header>
 <main>
 <section class="view" id="account">
   <h1>Account</h1>
@@ -127,8 +127,41 @@ mark.done{background:none;border-color:transparent;border-bottom:2px dashed var(
 <div class="card"><h2>Top 3 recurring mistakes</h2><div id="top"></div></div>
 <div class="card"><h2>Confusing guidelines</h2><p class="sub" style="margin-bottom:8px;font-size:14px">Rules reviewers override most often. Consider rewriting them.</p><div id="conf"></div></div>
 </div>
-<div class="grid"><div class="card"><div class="stat" id="s1">0</div>Fixes accepted</div><div class="card"><div class="stat" id="s2">0</div>Overrides</div></div><div class="card"><div class="row"><h2>Audit trail</h2><button class="btn" id="loadAudit">Refresh</button></div><p id="auditVerify"></p><div id="auditList"></div></div><div class="card"><h2>Recent text reviews</h2><div id="reviewHistory"></div></div>
+<div class="grid">
+<div class="card"><div class="stat" id="metricTotal">0</div>Total reviews</div>
+<div class="card"><div class="stat" id="metricPass">0</div>Passed</div>
+<div class="card"><div class="stat" id="metricChanges">0</div>Needs changes</div>
+<div class="card"><div class="stat" id="metricFail">0</div>Failed</div>
+<div class="card"><div class="stat" id="metricAverage">-</div>Average score</div>
+<div class="card"><div class="stat" id="s1">0</div>Fixes accepted this session</div>
+<div class="card"><div class="stat" id="s2">0</div>Overrides this session</div>
+</div><div class="card"><div class="row"><h2>Audit trail</h2><button class="btn" id="loadAudit">Refresh</button></div><p id="auditVerify"></p><div id="auditList"></div></div><div class="card"><h2>Recent text reviews</h2><div id="reviewHistory"></div></div>
 </section>
+
+<section class="view" id="contributors">
+<h1>External contributors</h1><p class="sub">Create brand-scoped access tokens for agencies and collaborators.</p>
+<div class="card"><h2>Create contributor access</h2><div class="grid">
+<label class="field">Contributor name<input id="contributorName" type="text" maxlength="100" placeholder="External Agency"></label>
+<label class="field">Token expiry<select id="contributorExpiry"><option value="1">1 hour</option><option value="24" selected>24 hours</option><option value="168">7 days</option><option value="720">30 days</option></select></label>
+</div><div class="row" style="margin-top:12px"><button class="btn p" id="createContributorToken">Create token</button><span class="fn" id="contributorMsg"></span></div>
+<div id="newContributorToken" class="guide" style="display:none;margin-top:14px"><b>Copy this token now</b><p>The secret is shown only once. Keep it private.</p><input id="createdTokenValue" type="text" readonly><div class="row"><button class="btn" id="copyContributorToken">Copy token</button><span class="fn" id="copyTokenMsg"></span></div></div></div>
+<div class="card"><div class="row" style="justify-content:space-between"><h2>Token management</h2><button class="btn" id="refreshContributorTokens">Refresh</button></div><p class="hint">The current backend has no token-list endpoint. Tokens created during this page session appear below; add a GET endpoint for persistent history.</p><div id="contributorTokenList">No tokens created in this session.</div></div>
+</section>
+<section class="view" id="external">
+<h1>External content submission</h1><p class="sub">Submit content using a contributor token issued by a workspace owner or admin.</p>
+<div class="card"><label>Contributor token<input id="externalToken" type="password" autocomplete="off" placeholder="Paste access token"></label>
+<label style="display:block;margin-top:12px">Contributor name<input id="externalName" type="text" maxlength="100" placeholder="Your name or agency"></label>
+<label style="display:block;margin-top:12px">Content to review<textarea id="externalContent" rows="9" maxlength="20000" placeholder="Paste content..."></textarea><small class="hint"><span id="externalCharCount">0</span>/20,000 characters</small></label>
+<div class="row" style="margin-top:12px"><button class="btn p" id="submitExternal">Submit for review</button><span class="fn" id="externalMsg"></span></div></div>
+<div class="card" id="externalResult" style="display:none"><h2>Review result</h2><div class="grid"><div><small class="hint">Status</small><div class="stat" id="externalStatus">-</div></div><div><small class="hint">Score</small><div class="stat" id="externalScore">-</div></div></div><p id="externalSummary"></p><p class="hint" id="externalReviewId"></p></div>
+</section>
+<section class="view" id="documents">
+<h1>Document review</h1><p class="sub">PDF/DOCX ingestion and approved export.</p>
+<div class="guide"><b>Backend integration still required</b><p>The current files do not provide the document upload, extraction, review or approved-export API contract. The UI is prepared, but submission is disabled until those endpoints are available.</p></div>
+<div class="card"><label class="drop"><input id="documentFile" type="file" accept=".pdf,.docx"><b>Choose PDF or DOCX</b>Maximum 10 MB<div class="fn" id="documentFileName"></div></label><div class="row"><button class="btn p" id="documentReviewButton" disabled>Review document</button><span class="fn" id="documentMsg">Waiting for document API.</span></div></div>
+<div class="card"><h2>Document results</h2><div id="documentResults">No document reviewed.</div></div>
+</section>
+
 </main>
 
 <div class="pop" id="pop"><div class="row" style="justify-content:space-between"><span class="tag" id="pt"></span><small id="pr" style="color:var(--mut)"></small></div>
@@ -157,7 +190,7 @@ async function loadRules(){needBrand();const a=await api(`/brands/${activeBrandI
 $("#addRule").onclick=async()=>{try{needBrand();const b={category:$("#ruleCategory").value.trim(),title:$("#ruleTitle").value.trim(),description:$("#ruleDescription").value.trim(),severity:$("#ruleSeverity").value,rule_code:$("#ruleCode").value.trim()||null};await api(`/brands/${activeBrandId}/rules`,{method:"POST",body:JSON.stringify(b)});["ruleCategory","ruleTitle","ruleDescription","ruleCode"].forEach(x=>$("#"+x).value="");await loadRules();say("ruleMsg","Rule saved.")}catch(e){say("ruleMsg",e.message)}};
 $("#refreshRules").onclick=()=>loadRules().catch(e=>say("ruleMsg",e.message));
 $("#ruleList").onclick=async e=>{const t=e.target.closest("[data-toggle]"),d=e.target.closest("[data-delete]");try{if(t)await api(`/rules/${t.dataset.toggle}`,{method:"PUT",body:JSON.stringify({is_active:t.dataset.active!=="true"})});else if(d)await api(`/rules/${d.dataset.delete}`,{method:"DELETE"});else return;await loadRules()}catch(x){say("ruleMsg",x.message)}};
-const views=["setup","editor","image","queue","dashboard","account"],ed=$("#ed"),pop=$("#pop");function route(){let h=location.hash.slice(1);if(!views.includes(h))h="setup";views.forEach(v=>$("#"+v).classList.toggle("on",v===h));document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on",a.hash==="#"+h));if(h==="queue")renderQueue();if(h==="dashboard")loadDashboard();if(h==="image")loadImageHistory().catch(e=>say("imageMsg",e.message))}addEventListener("hashchange",route);
+const views=["setup","editor","image","queue","contributors","external","documents","dashboard","account"],ed=$("#ed"),pop=$("#pop");function route(){let h=location.hash.slice(1);if(!views.includes(h))h="setup";views.forEach(v=>$("#"+v).classList.toggle("on",v===h));document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on",a.hash==="#"+h));if(h==="queue")renderQueue();if(h==="dashboard")loadDashboard();if(h==="image")loadImageHistory().catch(e=>say("imageMsg",e.message));if(h==="contributors")renderContributorTokens()}addEventListener("hashchange",route);
 document.querySelectorAll("input[data-f]").forEach(i=>i.onchange=()=>$("#"+i.dataset.f).textContent=[...i.files].map(f=>f.name).join(", "));
 function addColor(v){const d=document.createElement("div");d.className="hex";d.innerHTML='<div class="sw"></div><input type="text" maxlength="7">';const t=d.querySelector("input"),sw=d.querySelector(".sw");t.value=v;t.oninput=()=>sw.style.background=/^#[0-9a-f]{6}$/i.test(t.value)?t.value:"transparent";t.oninput();$("#colors").append(d)}addColor("#6D28D9");addColor("#0E0E12");$("#addc").onclick=()=>addColor("");
 $("#save").onclick=()=>say("saved","Palette inputs saved for this session. Configure image review palette below.");
@@ -178,8 +211,82 @@ $("#runImage").onclick=async()=>{try{needBrand();if(!selectedImage)throw Error("
 function renderImage(r){const fs=r.report?.findings||[];$("#imgl").innerHTML=`<p><b>${esc(r.filename)}</b> · ${fs.length} findings · ${esc(r.report?.max_severity||"none")}</p>`+(fs.length?fs.map(f=>`<div class="item"><div><b>${esc(f.title||f.rule||f.code||"Visual issue")}</b><p>${esc(f.explanation||f.message||f.description||"")}</p><small>${esc(f.severity||"")}</small></div></div>`).join(""):"No findings.")+`<p class="fn">These are deterministic palette and accessibility checks, not general-purpose visual AI recognition.</p>`}
 async function loadImageHistory(){if(!authToken||!activeBrandId)return;const a=await api(`/brands/${activeBrandId}/image-reviews`);$("#imageHistory").innerHTML=a.length?a.map(x=>`<div class="item"><div><b>${esc(x.filename)}</b><p>${esc(x.created_at)} · ${(x.report?.findings||[]).length} findings</p></div></div>`).join(""):"No saved image reviews."}
 $("#loadImages").onclick=()=>loadImageHistory().catch(e=>say("imageMsg",e.message));
-async function loadDashboard(){if(!authToken||!activeBrandId)return;$("#s1").textContent=accepted;$("#s2").textContent=overridden;try{const [logs,v,revs]=await Promise.all([api(`/brands/${activeBrandId}/audit-logs?limit=50`),api(`/brands/${activeBrandId}/audit-logs/verify`),api(`/brands/${activeBrandId}/reviews`)]);say("auditVerify",`Audit chain ${v.valid?"VALID":"CHECK"} · ${v.message||""}`);$("#auditList").innerHTML=logs.map(x=>`<div class="item"><div><b>${esc(x.action)}</b><p>${esc(x.entity_type)} · ${esc(x.created_at)}</p></div></div>`).join("")||"No audit events.";$("#reviewHistory").innerHTML=revs.map(x=>`<div class="item"><div><b>${esc(x.overall_status)} · ${x.overall_score}/100</b><p>${esc(x.summary)} · ${esc(x.created_at)}</p></div></div>`).join("")||"No reviews yet.";$("#top").textContent="Aggregate analytics are not currently exposed by the API.";$("#conf").textContent="Override analytics are not currently exposed by the API."}catch(e){say("auditVerify",e.message)}}
+async function loadDashboard(){if(!authToken||!activeBrandId)return;$("#s1").textContent=accepted;$("#s2").textContent=overridden;try{const [logs,v,revs]=await Promise.all([api(`/brands/${activeBrandId}/audit-logs?limit=50`),api(`/brands/${activeBrandId}/audit-logs/verify`),api(`/brands/${activeBrandId}/reviews`)]);say("auditVerify",`Audit chain ${v.valid?"VALID":"CHECK"} · ${v.message||""}`);$("#auditList").innerHTML=logs.map(x=>`<div class="item"><div><b>${esc(x.action)}</b><p>${esc(x.entity_type)} · ${esc(x.created_at)}</p></div></div>`).join("")||"No audit events.";$("#reviewHistory").innerHTML=revs.map(x=>`<div class="item"><div><b>${esc(x.overall_status)} · ${x.overall_score}/100</b><p>${esc(x.summary)} · ${esc(x.created_at)}</p></div></div>`).join("")||"No reviews yet.";const total=revs.length, pass=revs.filter(x=>x.overall_status==="pass").length,
+      needs=revs.filter(x=>x.overall_status==="needs_changes").length,
+      fail=revs.filter(x=>x.overall_status==="fail").length,
+      avg=total?Math.round(revs.reduce((n,x)=>n+(Number(x.overall_score)||0),0)/total):null;
+    $("#metricTotal").textContent=total;$("#metricPass").textContent=pass;
+    $("#metricChanges").textContent=needs;$("#metricFail").textContent=fail;
+    $("#metricAverage").textContent=avg===null?"-":`${avg}/100`;
+    const counts={};
+    revs.forEach(r=>(r.findings||[]).forEach(f=>{const key=f.category||f.issue||"Other";counts[key]=(counts[key]||0)+1;}));
+    const top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    $("#top").innerHTML=top.length?top.map(([k,n])=>`<div class="item"><b>${esc(k)}</b><span class="tag">${n} findings</span></div>`).join(""):"No findings recorded yet.";
+    $("#conf").textContent="Override-frequency and guideline-ambiguity analytics require review-decision aggregation from the backend. They are not inferred from incomplete data.";}catch(e){say("auditVerify",e.message)}}
 $("#loadAudit").onclick=loadDashboard;
+
+// External contributor token management.
+let sessionContributorTokens = [];
+function renderContributorTokens() {
+  const host = $("#contributorTokenList");
+  if (!sessionContributorTokens.length) { host.textContent = "No tokens created in this page session."; return; }
+  host.innerHTML = sessionContributorTokens.map(t => `<div class="item"><div><b>${esc(t.name)}</b> <span class="tag ${t.revoked?"crit":"ok"}">${t.revoked?"Revoked":"Active"}</span><p>Expires: ${esc(t.expires_at)}</p><p class="hint">Token ID: ${esc(t.id)}</p></div><div>${t.revoked?"":`<button class="btn" data-revoke-contributor="${esc(t.id)}">Revoke</button>`}</div></div>`).join("");
+}
+$("#createContributorToken").onclick = async () => {
+  try {
+    needBrand();
+    const name = $("#contributorName").value.trim(), hours = Number($("#contributorExpiry").value);
+    if (name.length < 2) throw Error("Enter a contributor name (at least 2 characters).");
+    $("#createContributorToken").disabled = true; say("contributorMsg","Creating token...");
+    const d = await api(`/brands/${activeBrandId}/contributors/tokens`, {method:"POST",body:JSON.stringify({name,expires_in_hours:hours})});
+    sessionContributorTokens.unshift({id:d.id,name:d.name,expires_at:d.expires_at,revoked:false});
+    $("#createdTokenValue").value = d.token; $("#newContributorToken").style.display = "block";
+    say("contributorMsg","Token created. Copy it now; it will not be shown again."); renderContributorTokens();
+  } catch(e) { say("contributorMsg",e.message); } finally { $("#createContributorToken").disabled = false; }
+};
+$("#copyContributorToken").onclick = async () => {
+  try { await navigator.clipboard.writeText($("#createdTokenValue").value); say("copyTokenMsg","Copied."); }
+  catch(e) { $("#createdTokenValue").select(); say("copyTokenMsg","Select and copy manually."); }
+};
+$("#refreshContributorTokens").onclick = () => { renderContributorTokens(); say("contributorMsg","Persistent token history requires a backend GET endpoint."); };
+$("#contributorTokenList").onclick = async e => {
+  const b=e.target.closest("[data-revoke-contributor]"); if(!b)return;
+  if(!confirm("Revoke this token?"))return;
+  try { b.disabled=true; await api(`/contributors/tokens/${b.dataset.revokeContributor}`,{method:"DELETE"});
+    const t=sessionContributorTokens.find(x=>x.id===b.dataset.revokeContributor); if(t)t.revoked=true;
+    renderContributorTokens(); say("contributorMsg","Token revoked.");
+  } catch(err) { b.disabled=false; say("contributorMsg",err.message); }
+};
+
+// Public external submission: token is sent only in the request header.
+$("#externalContent").addEventListener("input",e=>$("#externalCharCount").textContent=e.target.value.length);
+$("#submitExternal").onclick = async () => {
+  const token=$("#externalToken").value.trim(), name=$("#externalName").value.trim(), content=$("#externalContent").value.trim();
+  try {
+    if(!token)throw Error("Enter your contributor token.");
+    if(name.length<2)throw Error("Enter your name or agency.");
+    if(!content)throw Error("Enter content to review.");
+    $("#submitExternal").disabled=true; $("#externalResult").style.display="none"; say("externalMsg","Submitting...");
+    const r=await fetch(API_BASE+"/external/submit",{method:"POST",headers:{"Content-Type":"application/json","X-Contributor-Token":token},body:JSON.stringify({content,contributor_name:name})});
+    const raw=await r.text(); let d={}; try{d=raw?JSON.parse(raw):{}}catch{d={detail:raw}}
+    if(!r.ok)throw Error(d.detail||`HTTP ${r.status}`);
+    $("#externalStatus").textContent=d.overall_status||"Reviewed";
+    $("#externalScore").textContent=d.overall_score==null?"-":`${d.overall_score}/100`;
+    $("#externalSummary").textContent=d.summary||"";
+    $("#externalReviewId").textContent=`Review ID: ${d.review_id||"Unavailable"}`;
+    $("#externalResult").style.display="block"; say("externalMsg",d.message||"Review completed.");
+  } catch(e) { say("externalMsg",e.message); } finally { $("#submitExternal").disabled=false; }
+};
+
+// Validate document selection; do not fake an API integration that has not been specified.
+$("#documentFile").onchange=e=>{
+  const f=e.target.files[0]||null; say("documentFileName",f?`${f.name} · ${(f.size/1048576).toFixed(2)} MB`:"");
+  const valid=f&&/\\.(pdf|docx)$/i.test(f.name)&&f.size>0&&f.size<=10*1048576;
+  $("#documentReviewButton").disabled=!valid;
+  if(f&&!valid)say("documentFileName","Choose a non-empty PDF/DOCX file no larger than 10 MB.");
+};
+$("#documentReviewButton").onclick=()=>say("documentMsg","Cannot submit yet: connect the document-ingestion endpoint first.");
+
 async function init(){route();if(authToken){try{const u=await api("/auth/me");$("#userInfo").textContent=`Signed in as ${u.full_name}`;await loadBrands()}catch(e){say("authMsg","Session expired. Sign in again.")}}}
 init().catch(console.error);
 </script></body></html>

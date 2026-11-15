@@ -209,7 +209,14 @@ mark.done{background:none;border-color:transparent;border-bottom:2px dashed var(
 </main>
 
 <div class="pop" id="pop"><div class="row" style="justify-content:space-between"><span class="tag" id="pt"></span><small id="pr" style="color:var(--mut)"></small></div>
-<div class="diff"><div class="o"><small>Original</small><span id="po"></span></div><div class="s"><small>Suggested fix</small><span id="ps"></span></div></div>
+<div class="diff">
+  <div class="o"><small>Original</small><span id="po"></span></div>
+  <div class="s"><small>Advice</small><span id="ps"></span></div>
+</div>
+<div class="item">
+  <small>Ready-to-use replacement</small>
+  <p id="replacementPreview">No replacement available.</p>
+</div>
 <div class="row"><button class="btn p" id="pa">Accept Fix</button><button class="btn" id="pv">Override with Reason</button></div></div>
 
 <div class="modal" id="modal"><div class="card"><h2>Override with reason</h2><p class="sub" style="margin-bottom:10px;font-size:14px">Tell your team why this warning doesn’t apply.</p>
@@ -241,14 +248,81 @@ $("#save").onclick=()=>say("saved","Palette inputs saved for this session. Confi
 $("#scan").onclick=async()=>{try{needBrand();const content=ed.innerText.trim();if(!content)throw Error("Enter text to review.");$("#scan").disabled=true;say("scanmsg","Submitting review...");currentReview=await api(`/brands/${activeBrandId}/reviews`,{method:"POST",body:JSON.stringify({content})});findings=(currentReview.findings||[]).map((f,i)=>({...f,id:i,status:"open"}));let pf;try{pf=await api(`/brands/${activeBrandId}/preflight`,{method:"POST",body:JSON.stringify({content,channel:"social"})})}catch(e){pf={error:e.message}}renderFindings();say("scanmsg",`${currentReview.summary} · Score ${currentReview.overall_score}/100 · Provider ${currentReview.provider} · ${findings.length} findings. ${pf.error?"Preflight: "+pf.error:`Deterministic preflight: ${pf.findings?.length||0} findings, risk ${pf.risk_level||"unknown"}.`}`);renderQueue()}catch(e){say("scanmsg",e.message)}finally{$("#scan").disabled=false}};
 function sc(s){const v=String(s||"").toLowerCase();return ["critical","high"].includes(v)?"crit":v==="medium"?"term":"tone"}
 function renderFindings(){if(!findings.length)return;let html=esc(currentReview.content);findings.slice().sort((a,b)=>(b.original_text||"").length-(a.original_text||"").length).forEach(f=>{const phrase=esc(f.original_text||"");if(!phrase)return;const re=new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i");html=html.replace(re,m=>`<mark class="h ${sc(f.severity)}" data-id="${f.id}">${m}</mark>`)});ed.innerHTML=html.split(/\n/).map(x=>`<p>${x}</p>`).join("")}
-let activeFinding=null;ed.addEventListener("click",e=>{const m=e.target.closest("mark.h");if(!m)return;activeFinding=+m.dataset.id;const f=findings[activeFinding];$("#pt").textContent=f.severity;$("#pt").className="tag "+sc(f.severity);$("#pr").textContent=f.category+" · "+f.explanation;$("#po").textContent=f.original_text;$("#ps").textContent=f.suggestion;pop.style.display="block";const r=m.getBoundingClientRect();pop.style.top=(r.bottom+scrollY+8)+"px";pop.style.left=Math.max(8,Math.min(r.left+scrollX,innerWidth-pop.offsetWidth-8))+"px"});
+let activeFinding=null;ed.addEventListener("click",e=>{const m=e.target.closest("mark.h");if(!m)return;activeFinding=+m.dataset.id;const f=findings[activeFinding];$("#pt").textContent=f.severity;$("#pt").className="tag "+sc(f.severity);$("#pr").textContent=f.category+" · "+f.explanation;$("#po").textContent = f.original_text || "";
+$("#ps").textContent = f.suggestion || "No advice provided.";
+$("#replacementPreview").textContent = f.replacement_text || "No safe replacement available.";
+$("#pa").disabled = !f.replacement_text?.trim();
+pop.style.display = "block";const r=m.getBoundingClientRect();pop.style.top=(r.bottom+scrollY+8)+"px";pop.style.left=Math.max(8,Math.min(r.left+scrollX,innerWidth-pop.offsetWidth-8))+"px"});
 document.addEventListener("mousedown",e=>{if(!pop.contains(e.target)&&!e.target.closest("mark.h"))pop.style.display="none"});
 async function decision(i,kind,reason=null,replacement=null){const payload={finding_index:i,decision:kind,reason,replacement_text:replacement};await api(`/reviews/${currentReview.id}/decisions`,{method:"POST",body:JSON.stringify(payload)});findings[i].status=kind;findings[i].reason=reason;if(kind==="accepted")accepted++;else overridden++;renderQueue()}
-$("#pa").onclick=async()=>{try{const f=findings[activeFinding];if(!f.suggestion)throw Error("No replacement suggestion available.");await decision(activeFinding,"accepted",null,f.suggestion);pop.style.display="none"}catch(e){alert(e.message)}};
+$("#pa").onclick = async () => {
+  try {
+    const f = findings[activeFinding];
+    if (!f.replacement_text?.trim()) {
+      throw Error("No ready-to-use replacement is available.");
+    }
+    await decision(activeFinding, "accepted", null, f.replacement_text);
+    pop.style.display = "none";
+  } catch (e) {
+    alert(e.message);
+  }
+};
 $("#pv").onclick=()=>{pendingFinding=activeFinding;pop.style.display="none";$("#modal").classList.add("on")};$("#wc").onclick=()=>$("#modal").classList.remove("on");
 $("#wo").onclick=async()=>{const reason=$("#why").value.trim();if(!reason){$("#werr").style.display="block";return}try{await decision(pendingFinding,"overridden",reason,null);$("#modal").classList.remove("on")}catch(e){$("#werr").textContent=e.message;$("#werr").style.display="block"}};
-function renderQueue(){if(!findings.length){$("#qlist").textContent="Run a text review first.";$("#approve").disabled=true;return}$("#qlist").innerHTML=findings.map(f=>`<div class="item"><div><span class="tag ${sc(f.severity)}">${esc(f.severity)}</span> <b>${esc(f.category)}</b><p>${esc(f.original_text)} → ${esc(f.suggestion)}</p>${f.reason?`<p>Reason: ${esc(f.reason)}</p>`:""}</div><div>${f.status==="open"?`<button class="btn p" data-accept="${f.id}" ${!f.suggestion?"disabled":""}>Accept Fix</button> <button class="btn" data-override="${f.id}">Override</button>`:`<span class="tag ok">${esc(f.status)}</span>`}</div></div>`).join("");const n=findings.filter(f=>f.status==="open").length;$("#approve").disabled=n>0;say("qhint",n?`${n} unresolved`:"All decisions saved to backend.")}
-$("#qlist").onclick=async e=>{const a=e.target.closest("[data-accept]"),o=e.target.closest("[data-override]");try{if(a){const f=findings[+a.dataset.accept];await decision(f.id,"accepted",null,f.suggestion)}else if(o){pendingFinding=+o.dataset.override;$("#modal").classList.add("on")}}catch(x){alert(x.message)}};
+function renderQueue() {
+  if (!findings.length) {
+    $("#qlist").textContent = "Run a text review first.";
+    $("#approve").disabled = true;
+    return;
+  }
+
+  $("#qlist").innerHTML = findings.map(f => `
+    <div class="item">
+      <div>
+        <span class="tag ${sc(f.severity)}">${esc(f.severity)}</span>
+        <b>${esc(f.category)}</b>
+        <p><b>Advice:</b> ${esc(f.suggestion || "No advice provided.")}</p>
+        <p><b>Ready-to-use replacement:</b>
+          ${esc(f.replacement_text || "No safe replacement available.")}
+        </p>
+        ${f.reason ? `<p>Reason: ${esc(f.reason)}</p>` : ""}
+      </div>
+      <div>
+        ${f.status === "open" ? `
+          <button class="btn p" data-accept="${f.id}"
+            ${!f.replacement_text?.trim() ? "disabled" : ""}>
+            Accept Fix
+          </button>
+          <button class="btn" data-override="${f.id}">Override</button>
+        ` : `<span class="tag ok">${esc(f.status)}</span>`}
+      </div>
+    </div>
+  `).join("");
+
+  const n = findings.filter(f => f.status === "open").length;
+  $("#approve").disabled = n > 0;
+  say("qhint", n ? `${n} unresolved` : "All decisions saved to backend.");
+}
+
+$("#qlist").onclick = async e => {
+  const a = e.target.closest("[data-accept]");
+  const o = e.target.closest("[data-override]");
+
+  try {
+    if (a) {
+      const f = findings[+a.dataset.accept];
+      if (!f.replacement_text?.trim()) {
+        throw Error("No ready-to-use replacement is available.");
+      }
+      await decision(f.id, "accepted", null, f.replacement_text);
+    } else if (o) {
+      pendingFinding = +o.dataset.override;
+      $("#modal").classList.add("on");
+    }
+  } catch (x) {
+    alert(x.message);
+  }
+};
 $("#approve").onclick=()=>$("#badge").innerHTML="<div class='badge'><b>Review resolved</b>All finding decisions have been saved and audited.</div>";
 $("#imgup").onchange=e=>{selectedImage=e.target.files[0]||null;say("imgName",selectedImage?.name);if(selectedImage){$("#imagePreview").src=URL.createObjectURL(selectedImage);$("#imagePreview").style.display="block"}};
 $("#runImage").onclick=async()=>{try{needBrand();if(!selectedImage)throw Error("Choose an image.");const fd=new FormData();fd.append("image",selectedImage);fd.append("palette",JSON.stringify({primary:$("#imgPrimary").value.trim(),paper:$("#imgPaper").value.trim()}));fd.append("text_ink",$("#imgInk").value.trim());fd.append("wordmark_colors",JSON.stringify($("#imgWordmark").value.split(",").map(x=>x.trim()).filter(Boolean)));fd.append("alt_text",$("#imgAlt").value.trim());fd.append("contrast_min",$("#imgContrast").value||"4.5");$("#runImage").disabled=true;say("imageMsg","Reviewing...");const r=await api(`/brands/${activeBrandId}/image-reviews`,{method:"POST",body:fd});renderImage(r);say("imageMsg","Image review saved.");await loadImageHistory()}catch(e){say("imageMsg",e.message)}finally{$("#runImage").disabled=false}};
@@ -356,13 +430,19 @@ function renderDocumentFindings() {
         <p><b>Issue:</b> ${esc(f.issue || f.title || "Potential guideline violation")}</p>
         <p>${esc(f.explanation || "")}</p>
         <p><b>Original text:</b> ${esc(f.original_text || "Not provided")}</p>
-        <p><b>Suggested correction:</b> ${esc(f.suggestion || "No suggestion provided")}</p>
+        <p><b>Advice:</b> ${esc(f.suggestion || "No advice provided.")}</p>
+        <p><b>Ready-to-use replacement:</b>
+          ${esc(f.replacement_text || "No safe replacement available.")}
+        </p>
         <p><b>Decision:</b> ${esc(f.status === "open" ? "Pending" : f.status)}</p>
         ${f.reason ? `<p><b>Override reason:</b> ${esc(f.reason)}</p>` : ""}
       </div>
       <div class="row">
         ${f.status === "open" ? `
-          <button class="btn p" data-doc-accept="${index}" ${!f.suggestion ? "disabled" : ""}>Accept fix</button>
+          <button class="btn p" data-doc-accept="${index}"
+            ${!f.replacement_text?.trim() ? "disabled" : ""}>
+            Accept fix
+          </button>
           <button class="btn" data-doc-override="${index}">Override</button>
         ` : `<span class="tag ok">${esc(f.status)}</span>`}
       </div>
@@ -370,7 +450,8 @@ function renderDocumentFindings() {
   `).join("");
 
   const allResolved = documentFindings.every(f => f.status !== "open");
-  $("#approveDocument").disabled = !activeDocumentId || !allResolved || documentIsApproved;
+  $("#approveDocument").disabled =
+    !activeDocumentId || !allResolved || documentIsApproved;
 }
 
 $("#docFindings").addEventListener("click", async event => {
@@ -387,9 +468,9 @@ $("#docFindings").addEventListener("click", async event => {
   let replacement = null;
 
   if (acceptButton) {
-    if (!finding.suggestion) return;
+    if (!finding.replacement_text?.trim()) return;
     decision = "accepted";
-    replacement = finding.suggestion;
+    replacement = finding.replacement_text;
   } else {
     reason = prompt("Enter a reason for overriding this finding:");
     if (reason === null) return;

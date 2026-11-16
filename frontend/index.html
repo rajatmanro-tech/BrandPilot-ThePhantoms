@@ -156,10 +156,10 @@ mark.done{background:none;border-color:transparent;border-bottom:2px dashed var(
 <div class="card" id="externalResult" style="display:none"><h2>Review result</h2><div class="grid"><div><small class="hint">Status</small><div class="stat" id="externalStatus">-</div></div><div><small class="hint">Score</small><div class="stat" id="externalScore">-</div></div></div><p id="externalSummary"></p><p class="hint" id="externalReviewId"></p></div>
 </section>
 <section class="view" id="documents">
-<h1>Document review</h1><p class="sub">PDF/DOCX ingestion and approved export.</p>
-<div class="guide"><b>Backend integration still required</b><p>The current files do not provide the document upload, extraction, review or approved-export API contract. The UI is prepared, but submission is disabled until those endpoints are available.</p></div>
-<div class="card"><label class="drop"><input id="documentFile" type="file" accept=".pdf,.docx"><b>Choose PDF or DOCX</b>Maximum 10 MB<div class="fn" id="documentFileName"></div></label><div class="row"><button class="btn p" id="documentReviewButton" disabled>Review document</button><span class="fn" id="documentMsg">Waiting for document API.</span></div></div>
-<div class="card"><h2>Document results</h2><div id="documentResults">No document reviewed.</div></div>
+<h1>Document review</h1><p class="sub">Upload a text-based PDF or DOCX, review extracted content, resolve findings, and export an approved PDF.</p>
+<div class="guide"><b>Supported files</b><p>PDF and DOCX · Maximum 10 MB · Scanned/image-only PDFs are not supported because OCR is not configured.</p></div>
+<div class="card"><label class="drop"><input id="documentFile" type="file" accept=".pdf,.docx"><b>Choose PDF or DOCX</b>Maximum 10 MB<div class="fn" id="documentFileName"></div></label><div class="row" style="margin-top:12px"><button class="btn p" id="documentReviewButton" disabled>Review document</button><span class="fn" id="documentMsg">Choose a document to begin.</span></div></div>
+<div class="card"><h2>Document results</h2><div id="documentResults">No document reviewed.</div><div id="documentExportRow" class="row" style="margin-top:14px;display:none"><button class="btn g" id="documentExportButton">Download approved PDF</button><span id="documentExportMsg" class="fn"></span></div></div>
 </section>
 
 </main>
@@ -278,14 +278,68 @@ $("#submitExternal").onclick = async () => {
   } catch(e) { say("externalMsg",e.message); } finally { $("#submitExternal").disabled=false; }
 };
 
-// Validate document selection; do not fake an API integration that has not been specified.
+// PDF/DOCX document review and approved PDF export.
+let selectedDocument=null, documentReviewId=null, documentFindings=[];
 $("#documentFile").onchange=e=>{
-  const f=e.target.files[0]||null; say("documentFileName",f?`${f.name} · ${(f.size/1048576).toFixed(2)} MB`:"");
-  const valid=f&&/\\.(pdf|docx)$/i.test(f.name)&&f.size>0&&f.size<=10*1048576;
+  selectedDocument=e.target.files[0]||null;
+  const f=selectedDocument;
+  const valid=!!f&&/\.(pdf|docx)$/i.test(f.name)&&f.size>0&&f.size<=10*1048576;
+  say("documentFileName",f?(f.name+" · "+(f.size/1048576).toFixed(2)+" MB"):"");
   $("#documentReviewButton").disabled=!valid;
+  $("#documentResults").textContent="No document reviewed.";
+  $("#documentExportRow").style.display="none"; documentReviewId=null;
   if(f&&!valid)say("documentFileName","Choose a non-empty PDF/DOCX file no larger than 10 MB.");
 };
-$("#documentReviewButton").onclick=()=>say("documentMsg","Cannot submit yet: connect the document-ingestion endpoint first.");
+function renderDocumentResults(data){
+  documentReviewId=data.review_id;
+  documentFindings=(data.findings||[]).map((f,i)=>({...f,index:i,status:"open"}));
+  const host=$("#documentResults");
+  host.innerHTML="<p><b>"+esc(data.filename)+"</b> · "+data.character_count+" extracted characters · "+esc(data.provider)+"</p><p><b>Status:</b> "+esc(data.overall_status)+" · <b>Score:</b> "+data.overall_score+"/100</p><p>"+esc(data.summary)+"</p><h3>Findings ("+documentFindings.length+")</h3>"+
+    (documentFindings.length?documentFindings.map(f=>"<div class=\"item\"><div><span class=\"tag "+sc(f.severity)+"\">"+esc(f.severity)+"</span> <b>"+esc(f.category)+"</b><p>"+esc(f.issue||f.explanation)+"</p><p><b>Original:</b> "+esc(f.original_text)+"</p><p><b>Suggested:</b> "+esc(f.suggestion||"No suggestion supplied")+"</p><p id=\"docstatus-"+f.index+"\" class=\"fn\">Decision pending</p></div><div class=\"row\"><button class=\"btn p\" data-doc-accept=\""+f.index+"\" "+(f.suggestion?"":"disabled")+">Accept fix</button><button class=\"btn\" data-doc-override=\""+f.index+"\">Override</button></div></div>").join(""):"<p>No findings. Document is ready for approved export.</p>");
+  $("#documentExportRow").style.display="flex"; updateDocumentExportState();
+}
+function updateDocumentExportState(){
+  const unresolved=documentFindings.filter(f=>f.status==="open").length;
+  $("#documentExportButton").disabled=unresolved>0;
+  say("documentExportMsg",unresolved?unresolved+" finding(s) still need a decision.":"All findings resolved. Approved PDF export is available.");
+}
+$("#documentResults").onclick=async e=>{
+  const accept=e.target.closest("[data-doc-accept]"),override=e.target.closest("[data-doc-override]");
+  if(!accept&&!override)return;
+  const index=Number((accept||override).getAttribute(accept?"data-doc-accept":"data-doc-override"));
+  const f=documentFindings[index]; if(!f||!documentReviewId)return;
+  let decision,reason=null,replacement=null;
+  if(accept){decision="accepted";replacement=f.suggestion;}
+  else{reason=prompt("Enter the reason for overriding this finding:");if(!reason||!reason.trim())return;decision="overridden";reason=reason.trim();}
+  const buttons=e.target.closest(".item").querySelectorAll("button");buttons.forEach(b=>b.disabled=true);
+  try{
+    await api("/reviews/"+documentReviewId+"/decisions",{method:"POST",body:JSON.stringify({finding_index:index,decision,reason,replacement_text:replacement})});
+    f.status=decision; say("docstatus-"+index,decision==="accepted"?"Suggested fix accepted and recorded.":"Override reason recorded.");
+    updateDocumentExportState();
+  }catch(err){buttons.forEach(b=>b.disabled=false);say("docstatus-"+index,err.message);}
+};
+$("#documentReviewButton").onclick=async()=>{
+  try{
+    needBrand();if(!selectedDocument)throw Error("Choose a PDF or DOCX file.");
+    const fd=new FormData();fd.append("file",selectedDocument);
+    $("#documentReviewButton").disabled=true;say("documentMsg","Uploading, extracting and reviewing document...");
+    const result=await api("/brands/"+activeBrandId+"/documents/review",{method:"POST",body:fd});
+    result.filename=selectedDocument.name;renderDocumentResults(result);say("documentMsg","Document review completed and saved to the audit trail.");
+  }catch(err){say("documentMsg",err.message);}
+  finally{$("#documentReviewButton").disabled=!selectedDocument;}
+};
+$("#documentExportButton").onclick=async()=>{
+  try{
+    needAuth();if(!documentReviewId)throw Error("Review a document first.");
+    $("#documentExportButton").disabled=true;say("documentExportMsg","Generating approved PDF...");
+    const response=await fetch(API_BASE+"/documents/reviews/"+documentReviewId+"/approved-export",{headers:{Authorization:"Bearer "+authToken}});
+    if(!response.ok){let d={};try{d=await response.json()}catch{}throw Error(d.detail||"HTTP "+response.status);}
+    const blob=await response.blob(),url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download="brandpilot-approved-document.pdf";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+    say("documentExportMsg","Approved PDF downloaded.");
+  }catch(err){say("documentExportMsg",err.message);}
+  finally{updateDocumentExportState();}
+};
 
 async function init(){route();if(authToken){try{const u=await api("/auth/me");$("#userInfo").textContent=`Signed in as ${u.full_name}`;await loadBrands()}catch(e){say("authMsg","Session expired. Sign in again.")}}}
 init().catch(console.error);

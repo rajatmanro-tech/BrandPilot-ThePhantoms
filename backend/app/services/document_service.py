@@ -345,8 +345,9 @@ def stamp_approved_document(
 
             packet.seek(0)
             overlay = PdfReader(packet).pages[0]
-            page.merge_page(overlay)
+
             writer.add_page(page)
+            writer.pages[-1].merge_page(overlay)
 
         output = io.BytesIO()
         writer.write(output)

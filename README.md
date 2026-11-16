@@ -54,7 +54,7 @@ Organisations publish content through employees, agencies, and AI tools. As the 
 - **Image review:** Run deterministic checks using supplied brand colours and accessibility settings. This is not general-purpose image recognition.
 - **Contributor access:** Create brand-scoped contributor tokens with an expiry and manage token history.
 - **External submission:** Allow a contributor to submit content using an issued token.
-- **Document review interface:** The application includes a PDF/DOCX upload and review screen. Treat document ingestion, approval, and stamped export as incomplete until the full workflow has been tested end to end.
+- **Document review interface:** PDF/DOCX upload, text extraction, AI review, per-finding accept/override decisions, and approved PDF export are now implemented in the application. Scanned/image-only PDFs are not supported because OCR is not configured. The deployed end-to-end workflow still needs verification.
 - **Governance dashboard:** Provides a view for review metrics and potentially confusing guidelines. The dashboard should be evaluated with populated review history; an empty dashboard does not demonstrate working analytics.
 - **Audit trail:** Record relevant review actions and decisions for traceability.
 
@@ -192,7 +192,7 @@ For the competition submission, report the exact tests executed, environment, re
 - Image review uses deterministic checks based on supplied colour and accessibility values; it does not perform general-purpose visual understanding or logo recognition.
 - AI-generated review findings can require human verification.
 - Some deterministic pre-flight checks depend on explicitly configured rule codes and available brand data.
-- Document upload, review, approval, and approved export must be verified as a complete workflow before being described as fully delivered.
+- Document review is implemented for text-based PDF/DOCX files; validate the deployed upload, review, decision, and export flow before claiming production verification.
 - Governance analytics should be tested using populated review and decision history.
 - External-contributor access should be tested for token expiry, revocation, invalid tokens, and brand scoping.
 
@@ -207,7 +207,7 @@ For the competition submission, report the exact tests executed, environment, re
 
 ## Roadmap
 
-- Complete and validate PDF/DOCX ingestion and approved, stamped exports.
+- Add OCR for scanned PDFs and strengthen document export formatting and approval evidence.
 - Expand review analytics and guideline-ambiguity detection.
 - Strengthen scoped and revocable access for external contributors.
 - Improve automated integration, error-handling, and usability testing.

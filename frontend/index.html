@@ -145,7 +145,7 @@ mark.done{background:none;border-color:transparent;border-bottom:2px dashed var(
 <label class="field">Token expiry<select id="contributorExpiry"><option value="1">1 hour</option><option value="24" selected>24 hours</option><option value="168">7 days</option><option value="720">30 days</option></select></label>
 </div><div class="row" style="margin-top:12px"><button class="btn p" id="createContributorToken">Create token</button><span class="fn" id="contributorMsg"></span></div>
 <div id="newContributorToken" class="guide" style="display:none;margin-top:14px"><b>Copy this token now</b><p>The secret is shown only once. Keep it private.</p><input id="createdTokenValue" type="text" readonly><div class="row"><button class="btn" id="copyContributorToken">Copy token</button><span class="fn" id="copyTokenMsg"></span></div></div></div>
-<div class="card"><div class="row" style="justify-content:space-between"><h2>Token management</h2><button class="btn" id="refreshContributorTokens">Refresh</button></div><p class="hint">The current backend has no token-list endpoint. Tokens created during this page session appear below; add a GET endpoint for persistent history.</p><div id="contributorTokenList">No tokens created in this session.</div></div>
+<div class="card"><div class="row" style="justify-content:space-between"><h2>Token management</h2><button class="btn" id="refreshContributorTokens">Refresh</button></div><p class="hint">Token secrets are shown only once. Active, expired and revoked tokens remain visible in token history.</p><div id="contributorTokenList">No tokens created in this session.</div></div>
 </section>
 <section class="view" id="external">
 <h1>External content submission</h1><p class="sub">Submit content using a contributor token issued by a workspace owner or admin.</p>
@@ -329,18 +329,65 @@ $("#runImage").onclick=async()=>{try{needBrand();if(!selectedImage)throw Error("
 function renderImage(r){const fs=r.report?.findings||[];$("#imgl").innerHTML=`<p><b>${esc(r.filename)}</b> · ${fs.length} findings · ${esc(r.report?.max_severity||"none")}</p>`+(fs.length?fs.map(f=>`<div class="item"><div><b>${esc(f.title||f.rule||f.code||"Visual issue")}</b><p>${esc(f.explanation||f.message||f.description||"")}</p><small>${esc(f.severity||"")}</small></div></div>`).join(""):"No findings.")+`<p class="fn">These are deterministic palette and accessibility checks, not general-purpose visual AI recognition.</p>`}
 async function loadImageHistory(){if(!authToken||!activeBrandId)return;const a=await api(`/brands/${activeBrandId}/image-reviews`);$("#imageHistory").innerHTML=a.length?a.map(x=>`<div class="item"><div><b>${esc(x.filename)}</b><p>${esc(x.created_at)} · ${(x.report?.findings||[]).length} findings</p></div></div>`).join(""):"No saved image reviews."}
 $("#loadImages").onclick=()=>loadImageHistory().catch(e=>say("imageMsg",e.message));
-async function loadDashboard(){if(!authToken||!activeBrandId)return;$("#s1").textContent=accepted;$("#s2").textContent=overridden;try{const [logs,v,revs]=await Promise.all([api(`/brands/${activeBrandId}/audit-logs?limit=50`),api(`/brands/${activeBrandId}/audit-logs/verify`),api(`/brands/${activeBrandId}/reviews`)]);say("auditVerify",`Audit chain ${v.valid?"VALID":"CHECK"} · ${v.message||""}`);$("#auditList").innerHTML=logs.map(x=>`<div class="item"><div><b>${esc(x.action)}</b><p>${esc(x.entity_type)} · ${esc(x.created_at)}</p></div></div>`).join("")||"No audit events.";$("#reviewHistory").innerHTML=revs.map(x=>`<div class="item"><div><b>${esc(x.overall_status)} · ${x.overall_score}/100</b><p>${esc(x.summary)} · ${esc(x.created_at)}</p></div></div>`).join("")||"No reviews yet.";const total=revs.length, pass=revs.filter(x=>x.overall_status==="pass").length,
-      needs=revs.filter(x=>x.overall_status==="needs_changes").length,
-      fail=revs.filter(x=>x.overall_status==="fail").length,
-      avg=total?Math.round(revs.reduce((n,x)=>n+(Number(x.overall_score)||0),0)/total):null;
-    $("#metricTotal").textContent=total;$("#metricPass").textContent=pass;
-    $("#metricChanges").textContent=needs;$("#metricFail").textContent=fail;
-    $("#metricAverage").textContent=avg===null?"-":`${avg}/100`;
-    const counts={};
-    revs.forEach(r=>(r.findings||[]).forEach(f=>{const key=f.category||f.issue||"Other";counts[key]=(counts[key]||0)+1;}));
-    const top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,3);
-    $("#top").innerHTML=top.length?top.map(([k,n])=>`<div class="item"><b>${esc(k)}</b><span class="tag">${n} findings</span></div>`).join(""):"No findings recorded yet.";
-    $("#conf").textContent="Override-frequency and guideline-ambiguity analytics require review-decision aggregation from the backend. They are not inferred from incomplete data.";}catch(e){say("auditVerify",e.message)}}
+
+async function loadDashboard() {
+  if (!authToken || !activeBrandId) return;
+
+  try {
+    const [insights, logs, verification, reviews] = await Promise.all([
+      api(`/brands/${activeBrandId}/insights`),
+      api(`/brands/${activeBrandId}/audit-logs?limit=50`),
+      api(`/brands/${activeBrandId}/audit-logs/verify`),
+      api(`/brands/${activeBrandId}/reviews`)
+    ]);
+
+    $("#s1").textContent = insights.accepted_decisions ?? 0;
+    $("#s2").textContent = insights.overridden_decisions ?? 0;
+
+    say("auditVerify",
+      `Audit chain ${verification.valid ? "VALID" : "CHECK"} · ${verification.message || ""}`
+    );
+
+    $("#auditList").innerHTML = logs.map(x =>
+      `<div class="item"><div><b>${esc(x.action)}</b>
+      <p>${esc(x.entity_type)} · ${esc(x.created_at)}</p></div></div>`
+    ).join("") || "No audit events.";
+
+    $("#reviewHistory").innerHTML = reviews.map(x =>
+      `<div class="item"><div><b>${esc(x.overall_status)} · ${x.overall_score}/100</b>
+      <p>${esc(x.summary)} · ${esc(x.created_at)}</p></div></div>`
+    ).join("") || "No reviews yet.";
+
+    $("#metricTotal").textContent = insights.total_reviews;
+    $("#metricPass").textContent = insights.passed;
+    $("#metricChanges").textContent = insights.needs_changes;
+    $("#metricFail").textContent = insights.failed;
+    $("#metricAverage").textContent =
+      insights.average_score == null ? "-" : `${insights.average_score}/100`;
+
+    $("#top").innerHTML = (insights.top_issues || []).slice(0, 3).map(x =>
+      `<div class="item"><div><b>${esc(x.category)}</b>
+      <p>${esc(x.issue)}</p></div><span>${x.count} findings</span></div>`
+    ).join("") || "No recurring issues.";
+
+    const signals = insights.ambiguity_signals || [];
+
+    $("#conf").innerHTML = signals.length
+      ? signals.map(x =>
+          `<div class="item"><div><b>${esc(x.category)}</b>
+          <p>${esc(x.issue)}</p>
+          <small>${esc(x.signal)} (${x.override_count} overrides)</small>
+          </div></div>`
+        ).join("") +
+        `<p class="hint">${esc(insights.ambiguity_note || "")}</p>`
+      : `<p>No repeated override patterns detected yet.</p>
+         <p class="hint">${esc(insights.ambiguity_note || "")}</p>`;
+
+  } catch (e) {
+    say("auditVerify", e.message);
+  }
+}
+
 $("#loadAudit").onclick=loadDashboard;
 
 // External contributor token management.
@@ -349,6 +396,22 @@ function renderContributorTokens() {
   const host = $("#contributorTokenList");
   if (!sessionContributorTokens.length) { host.textContent = "No tokens created in this page session."; return; }
   host.innerHTML = sessionContributorTokens.map(t => `<div class="item"><div><b>${esc(t.name)}</b> <span class="tag ${t.revoked?"crit":"ok"}">${t.revoked?"Revoked":"Active"}</span><p>Expires: ${esc(t.expires_at)}</p><p class="hint">Token ID: ${esc(t.id)}</p></div><div>${t.revoked?"":`<button class="btn" data-revoke-contributor="${esc(t.id)}">Revoke</button>`}</div></div>`).join("");
+}
+async function loadContributorTokens() {
+  if (!authToken || !activeBrandId) return;
+
+  $("#contributorTokenList").textContent = "Loading contributor tokens...";
+
+  try {
+    sessionContributorTokens = await api(
+      `/brands/${activeBrandId}/contributors/tokens`
+    );
+    renderContributorTokens();
+  } catch (error) {
+    $("#contributorTokenList").textContent =
+      error.message || "Could not load contributor tokens.";
+    throw error;
+  }
 }
 $("#createContributorToken").onclick = async () => {
   try {
@@ -366,7 +429,19 @@ $("#copyContributorToken").onclick = async () => {
   try { await navigator.clipboard.writeText($("#createdTokenValue").value); say("copyTokenMsg","Copied."); }
   catch(e) { $("#createdTokenValue").select(); say("copyTokenMsg","Select and copy manually."); }
 };
-$("#refreshContributorTokens").onclick = () => { renderContributorTokens(); say("contributorMsg","Persistent token history requires a backend GET endpoint."); };
+$("#refreshContributorTokens").onclick = async () => {
+  try {
+    const tokens = await api(
+      `/brands/${activeBrandId}/contributors/tokens`
+    );
+
+    sessionContributorTokens = tokens;
+    renderContributorTokens();
+    say("contributorMsg", "Token history refreshed.");
+  } catch (e) {
+    say("contributorMsg", e.message);
+  }
+};
 $("#contributorTokenList").onclick = async e => {
   const b=e.target.closest("[data-revoke-contributor]"); if(!b)return;
   if(!confirm("Revoke this token?"))return;

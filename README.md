@@ -4,6 +4,22 @@
 
 BrandPilot helps teams review marketing and other brand-facing content before publication. It brings brand workspaces, guideline rules, text and visual checks, document review, review decisions, contributor access, and governance information into one web application.
 
+
+## Judge Demo Access
+
+**Live application:** https://brandpilot-frontend.vercel.app/
+
+The following are the proposed public demonstration credentials. **Register this account in the deployed application before judges use it.** These credentials are not proof that the account already exists.
+
+| Demo item | Value |
+|---|---|
+| Demo account email | demo@brandpilot.in |
+| Demo account password | AranyaDemo!2026#BP |
+| Demo workspace | Aranya Botanics |
+| Demo workflow | Brand setup → Text review → Image review → Documents → Approval → Governance |
+
+After registering, create and populate the Aranya Botanics workspace using the test plan below. Sign out and verify a fresh login before telling judges the account is ready. This is a deliberately public demo account: store only fictional sample data in it, never personal information, private documents, API keys or production secrets.
+
 ## Live Project
 
 | Resource | Link |
@@ -228,21 +244,6 @@ Report the exact automated tests executed, environment, results, and any known f
 
 See [LICENSE](LICENSE). Developed for CodeTitans India 2026 by Team The Phantoms.
 
-
-## Judge Demo Access
-
-**Live application:** https://brandpilot-frontend.vercel.app/
-
-The judge demonstration should use a dedicated demo account and a pre-populated demo workspace. The account must be created in the deployed application before credentials are shared. Do not publish an untested account or a password placeholder as working credentials.
-
-| Demo item | Value |
-|---|---|
-| Demo workspace | Aranya Botanics |
-| Demo account email | Add the registered demo email here after account creation |
-| Demo account password | Share securely with judges or add the intentionally public demo password only after testing it |
-| Demo workflow | Brand setup → Text review → Image review → Documents → Approval → Governance |
-
-The demo account should contain the Aranya Botanics rules and sample review data described in the **Aranya Botanics Demo Test Plan** below. Before sharing access, sign out and verify that a fresh login works. Never use a personal account, production administrator account, API key, or private secret as judge credentials.
 
 ## Aranya Botanics Demo Test Plan
 

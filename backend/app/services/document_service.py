@@ -196,12 +196,13 @@ def apply_docx_decisions(
 
 
 
+
 def apply_pdf_decisions(
     file_data: bytes,
     findings: list[dict],
     decisions: list,
 ) -> bytes:
-    """Apply accepted PDF corrections using exact text locations."""
+    """Apply PDF replacements, including text spanning multiple lines."""
     import fitz
 
     accepted = {
@@ -215,44 +216,75 @@ def apply_pdf_decisions(
     try:
         replacements = []
 
-        # Locate every accepted finding before modifying the PDF.
         for index, replacement in accepted.items():
             if not 0 <= index < len(findings):
                 raise ValueError(f"Invalid finding index: {index}")
 
             original = findings[index].get("original_text", "").strip()
-
             if not original:
                 raise ValueError(f"Finding {index} has no original text.")
 
-            matches = []
+            groups = []
 
             for page_number, page in enumerate(pdf):
-                for rect in page.search_for(original):
-                    matches.append((page_number, rect))
+                rects = page.search_for(original)
 
-            if len(matches) != 1:
+                if not rects:
+                    continue
+
+                # Group rectangles belonging to the same wrapped phrase.
+                rects = sorted(rects, key=lambda r: (r.y0, r.x0))
+                page_groups = []
+
+                for rect in rects:
+                    if not page_groups:
+                        page_groups.append([rect])
+                        continue
+
+                    previous = page_groups[-1][-1]
+                    vertical_gap = rect.y0 - previous.y1
+
+                    if (
+                        -2 <= vertical_gap <= max(
+                            12, previous.height * 1.5
+                        )
+                    ):
+                        page_groups[-1].append(rect)
+                    else:
+                        page_groups.append([rect])
+
+                for group in page_groups:
+                    groups.append((page_number, group))
+
+            if len(groups) != 1:
                 raise ValueError(
-                    f"Finding {index}: expected one exact PDF match, "
-                    f"found {len(matches)}."
+                    f"Finding {index}: expected one text occurrence, "
+                    f"found {len(groups)}."
                 )
 
+            page_number, rects = groups[0]
             replacements.append(
-                (matches[0][0], matches[0][1], replacement, index)
+                (page_number, rects, replacement, index)
             )
 
-        # Apply the validated corrections.
-        for page_number, rect, replacement, index in replacements:
+        # Apply only after every finding has been located.
+        for page_number, rects, replacement, index in replacements:
             page = pdf[page_number]
+            combined = fitz.Rect(rects[0])
+
+            for rect in rects[1:]:
+                combined |= rect
 
             area = fitz.Rect(
-                rect.x0,
-                max(0, rect.y0 - 3),
-                min(page.rect.width - 30, rect.x0 + 350),
-                min(page.rect.height - 30, rect.y1 + 55),
+                combined.x0,
+                max(0, combined.y0 - 3),
+                min(page.rect.width - 30, combined.x0 + 350),
+                min(page.rect.height - 30, combined.y1 + 55),
             )
 
-            page.add_redact_annot(rect, fill=(1, 1, 1))
+            for rect in rects:
+                page.add_redact_annot(rect, fill=(1, 1, 1))
+
             page.apply_redactions()
 
             result = page.insert_textbox(

@@ -1,65 +1,114 @@
 # BrandPilot – The Phantoms
 
-**AI-Powered Brand Governance Platform**
+**AI-Assisted Brand Governance Platform**
 
-BrandPilot is an intelligent brand-governance platform that helps organisations maintain brand consistency and trust by reviewing content before publication. It identifies violations, explains findings, suggests corrections, and supports human approval workflows.
+BrandPilot helps teams review marketing and other brand-facing content before publication. It brings brand workspaces, guideline rules, text and visual checks, review decisions, contributor access, and governance information into one web application.
 
-## 🚀 Live Project
+## Live Project
 
-- **Live Website:** https://brandpilot-frontend.vercel.app/
-- **Backend API:** https://brandpilot-thephantoms.onrender.com
-- **API Documentation:** https://brandpilot-thephantoms.onrender.com/docs
-- **GitHub Repository:** https://github.com/rajatmanro-tech/BrandPilot-ThePhantoms
+| Resource | Link |
+|---|---|
+| Live application | https://brandpilot-frontend.vercel.app/ |
+| Backend API | https://brandpilot-thephantoms.onrender.com |
+| API documentation | https://brandpilot-thephantoms.onrender.com/docs |
+| Source code | https://github.com/rajatmanro-tech/BrandPilot-ThePhantoms |
 
-## 🎯 Problem Statement
+## Product Screenshots
 
-Organisations publish content through multiple employees, agencies, and AI tools. Maintaining consistent brand identity across all these channels is difficult.
+The screenshots below show the application's main sections.
 
-Incorrect claims, outdated information, inconsistent terminology, and off-brand visuals can damage brand credibility.
+### Brand setup
+![Brand setup](docs/screenshots/01-brand-setup.png)
 
-BrandPilot addresses this challenge by checking content against approved brand guidelines before publication.
+### Text review
+![Text review](docs/screenshots/02-text-review.png)
 
-## ✨ Key Features
+### Image review
+![Image review](docs/screenshots/03-image-review.png)
 
-- **Brand Management:** Create and manage brand profiles and guidelines.
-- **Rule Management:** Define brand rules, categories, severity levels, and descriptions.
-- **AI-Powered Text Review:** Analyse content and identify potential brand violations.
-- **Explainable Findings:** Display detected issues with explanations and suggested corrections.
-- **Image Review:** Check colour palette consistency and accessibility requirements.
-- **Review Workflow:** Accept suggested corrections or override findings.
-- **Approval Workflow:** Support human review and approval decisions.
-- **Audit Logs:** Maintain records of review decisions and actions.
+### Contributor access
+![Contributors](docs/screenshots/04-contributors.png)
 
-## 🛠️ Technology Stack
+### External content submission
+![External submission](docs/screenshots/05-external-submit.png)
 
-| Component | Technology |
+### Document review interface
+![Document review](docs/screenshots/06-document-review.png)
+
+### Governance dashboard
+![Governance dashboard](docs/screenshots/07-governance-dashboard.png)
+
+### Account
+![Account](docs/screenshots/08-account.png)
+
+## Problem
+
+Organisations publish content through employees, agencies, and AI tools. As the number of contributors grows, it becomes harder to keep language, claims, visual identity, and approval practices consistent. BrandPilot is designed to help teams check content against their brand rules before it is published, explain potential issues, and retain a record of review decisions.
+
+## Features
+
+- **Brand workspaces:** Create and switch between brand workspaces.
+- **Brand rules:** Define requirements by category, title, optional rule code, and supporting details.
+- **Text review:** Submit copy for a pre-flight review and inspect flagged phrases, explanations, and suggested fixes.
+- **Review decisions:** Record acceptance of a suggested replacement or an override with a reason, where supported by the review workflow.
+- **Image review:** Run deterministic checks using supplied brand colours and accessibility settings. This is not general-purpose image recognition.
+- **Contributor access:** Create brand-scoped contributor tokens with an expiry and manage token history.
+- **External submission:** Allow a contributor to submit content using an issued token.
+- **Document review interface:** The application includes a PDF/DOCX upload and review screen. Treat document ingestion, approval, and stamped export as incomplete until the full workflow has been tested end to end.
+- **Governance dashboard:** Provides a view for review metrics and potentially confusing guidelines. The dashboard should be evaluated with populated review history; an empty dashboard does not demonstrate working analytics.
+- **Audit trail:** Record relevant review actions and decisions for traceability.
+
+> **Feature-status note:** A visible screen or API route does not by itself prove that a complete workflow is operational. The final submission documentation should distinguish features that have been tested end to end from interface elements or workflows that remain incomplete.
+
+## Technology Stack
+
+| Layer | Technology |
 |---|---|
 | Frontend | HTML, CSS, JavaScript |
 | Backend | Python, FastAPI |
 | Database | PostgreSQL |
-| ORM | SQLAlchemy |
-| Database Migrations | Alembic |
+| ORM and migrations | SQLAlchemy, Alembic |
 | Authentication | JWT |
-| AI Integration | Groq, Google Gemini, OpenAI |
-| Frontend Hosting | Vercel |
-| Backend Hosting | Render |
+| AI integrations | Groq, Google Gemini, OpenAI |
+| Image processing | Pillow |
+| Hosting | Vercel (frontend), Render (backend) |
 
-## 🏗️ Architecture
+## Architecture Overview
 
-BrandPilot follows a frontend-backend architecture.
+1. A user interacts with the web application.
+2. The frontend sends requests to the FastAPI REST API.
+3. The backend validates requests, applies authentication and access checks, and coordinates review workflows.
+4. Review services use configured deterministic checks and AI integrations where applicable.
+5. PostgreSQL stores application data such as users, workspaces, rules, reviews, contributor tokens, decisions, and audit records.
+6. Review decisions and relevant actions are recorded to support traceability.
 
-1. Users interact with the frontend through the web application.
-2. The frontend communicates with the FastAPI backend through REST APIs.
-3. The backend processes requests, manages authentication, and performs brand reviews.
-4. AI services assist with text analysis and review findings.
-5. PostgreSQL stores application data, including users, brands, rules, reviews, and audit records.
-6. Review decisions are recorded to support accountability and traceability.
+## Repository Structure
 
-## ⚙️ Local Setup
+```text
+BrandPilot-ThePhantoms/
+├── backend/
+│   ├── app/
+│   │   ├── core/
+│   │   ├── db/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── schemas/
+│   │   └── services/
+│   ├── tests/
+│   ├── requirements.txt
+│   └── .env.example
+├── frontend/
+├── docs/
+│   └── screenshots/
+├── README.md
+└── LICENSE
+```
+
+## Run Locally
 
 ### Prerequisites
 
-- Python 3.12 or compatible version
+- Python 3.12
 - PostgreSQL
 - Git
 
@@ -70,101 +119,100 @@ git clone https://github.com/rajatmanro-tech/BrandPilot-ThePhantoms.git
 cd BrandPilot-ThePhantoms
 ```
 
-### 2. Set up the backend
-
-```bash
-cd backend
-python -m venv .venv
-```
-
-Activate the virtual environment on Windows:
+### 2. Create and activate a virtual environment
 
 ```powershell
+cd backend
+python -m venv .venv
 .venv\Scripts\activate
 ```
 
-Install dependencies:
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configure environment variables
+### 4. Configure environment variables
 
-Create a `.env` file inside the `backend` directory.
+Create a `.env` file in the `backend` directory. Use `.env.example` as the reference and provide your own database URL, a strong secret key, and the API keys for the integrations you intend to use.
 
-Configure the following variables:
+Typical configuration keys include:
 
 ```env
-DATABASE_URL=your_postgresql_database_url
-SECRET_KEY=your_secret_key
+DATABASE_URL=postgresql+psycopg://USER:PASSWORD@localhost:5432/brandpilot_db
+SECRET_KEY=replace-with-a-long-random-secret
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-GROQ_API_KEY=your_groq_api_key
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-3.8-flash
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4.1-mini
+GROQ_API_KEY=
 GROQ_MODEL=openai/gpt-oss-20b
-GEMINI_API_KEY=your_gemini_api_key
-OPENAI_API_KEY=your_openai_api_key
+
+FRONTEND_URL=http://127.0.0.1:3000
 ```
 
-Use your own credentials. Never commit API keys or database passwords to GitHub.
+Only configure the providers you use. Never commit API keys, passwords, or production secrets.
 
-### 4. Run database migrations
+### 5. Apply database migrations
+
+From the `backend` directory:
 
 ```bash
 alembic upgrade head
 ```
 
-### 5. Start the backend
+### 6. Start the backend
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-Backend runs at:
+The API will be available at `http://127.0.0.1:8000` and its interactive documentation at `http://127.0.0.1:8000/docs`.
 
-`http://127.0.0.1:8000`
+### 7. Open the frontend
 
-API documentation:
+Open `frontend/index.html` in a browser. For local use, ensure the frontend API base URL is configured to point to the local backend.
 
-`http://127.0.0.1:8000/docs`
+## Testing
 
-### 6. Run the frontend
+The repository contains backend tests. Run the applicable test suite from the backend environment:
 
-Open `frontend/index.html` in a browser.
+```bash
+pytest
+```
 
-For local development, ensure the frontend API base URL points to your local backend.
+For the competition submission, report the exact tests executed, environment, results, and any known failures. Do not describe a test as passed unless it was actually run against the submitted version.
 
-## 🔐 Security
+## Current Limitations and Validation Notes
 
-- JWT-based authentication.
-- Environment-based configuration for sensitive credentials.
-- Password hashing.
-- Backend API validation.
-- Human-controlled review and approval decisions.
+- Image review uses deterministic checks based on supplied colour and accessibility values; it does not perform general-purpose visual understanding or logo recognition.
+- AI-generated review findings can require human verification.
+- Some deterministic pre-flight checks depend on explicitly configured rule codes and available brand data.
+- Document upload, review, approval, and approved export must be verified as a complete workflow before being described as fully delivered.
+- Governance analytics should be tested using populated review and decision history.
+- External-contributor access should be tested for token expiry, revocation, invalid tokens, and brand scoping.
 
-## ⚠️ Current Limitations
-
-- Image review currently focuses on deterministic colour-palette and accessibility checks rather than general-purpose image understanding.
-- AI-generated findings may require human verification.
-- Advanced document ingestion, expanded analytics, and external-contributor workflows are planned improvements.
-
-## 👥 Team – The Phantoms
+## Team – The Phantoms
 
 | Member | Role |
 |---|---|
 | Aditya Singh | Lead AI & RAG Engineer |
-| Karanveer Singh | Multi-Modal & Computer Vision Developer |
+| Karanveer Singh | Multimodal & Computer Vision Developer |
 | Rajat Manro | Backend & Systems Architect |
 | Ranvir Singh | Frontend & Interactive UI Engineer |
 
-## 🔮 Future Scope
+## Roadmap
 
-- DOCX/PDF document ingestion with approved exports.
-- Insights dashboard and guideline-ambiguity detection.
-- External-contributor agency workflow with scoped access.
-- Improved accessibility and reliability testing.
+- Complete and validate PDF/DOCX ingestion and approved, stamped exports.
+- Expand review analytics and guideline-ambiguity detection.
+- Strengthen scoped and revocable access for external contributors.
+- Improve automated integration, error-handling, and usability testing.
+- Expand visual analysis while keeping its capabilities and limitations explicit.
 
-## 📄 License
+## License
 
-This project was developed as part of CodeTitans India 2026 by Team The Phantoms.
+See [LICENSE](LICENSE). Developed for CodeTitans India 2026 by Team The Phantoms.

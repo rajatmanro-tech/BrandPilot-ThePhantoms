@@ -2,7 +2,7 @@
 
 **AI-Assisted Brand Governance Platform**
 
-BrandPilot helps teams review marketing and other brand-facing content before publication. It brings brand workspaces, guideline rules, text and visual checks, review decisions, contributor access, and governance information into one web application.
+BrandPilot helps teams review marketing and other brand-facing content before publication. It brings brand workspaces, guideline rules, text and visual checks, document review, review decisions, contributor access, and governance information into one web application.
 
 ## Live Project
 
@@ -43,22 +43,31 @@ The screenshots below show the application's main sections.
 
 ## Problem
 
-Organisations publish content through employees, agencies, and AI tools. As the number of contributors grows, it becomes harder to keep language, claims, visual identity, and approval practices consistent. BrandPilot is designed to help teams check content against their brand rules before it is published, explain potential issues, and retain a record of review decisions.
+Organisations publish content through employees, agencies, and AI tools. As the number of contributors grows, it becomes harder to keep language, claims, visual identity, and approval practices consistent. BrandPilot helps teams check content against their brand rules before publication, understand potential issues, and retain a record of review decisions.
 
 ## Features
 
 - **Brand workspaces:** Create and switch between brand workspaces.
 - **Brand rules:** Define requirements by category, title, optional rule code, and supporting details.
 - **Text review:** Submit copy for a pre-flight review and inspect flagged phrases, explanations, and suggested fixes.
-- **Review decisions:** Record acceptance of a suggested replacement or an override with a reason, where supported by the review workflow.
+- **Review decisions:** Accept suggested replacements or record overrides with reasons, where supported by the review workflow.
 - **Image review:** Run deterministic checks using supplied brand colours and accessibility settings. This is not general-purpose image recognition.
 - **Contributor access:** Create brand-scoped contributor tokens with an expiry and manage token history.
 - **External submission:** Allow a contributor to submit content using an issued token.
-- **Document review interface:** PDF/DOCX upload, text extraction, AI review, per-finding accept/override decisions, and approved PDF export are now implemented in the application. Scanned/image-only PDFs are not supported because OCR is not configured. The deployed end-to-end workflow still needs verification.
-- **Governance dashboard:** Provides a view for review metrics and potentially confusing guidelines. The dashboard should be evaluated with populated review history; an empty dashboard does not demonstrate working analytics.
-- **Audit trail:** Record relevant review actions and decisions for traceability.
+- **Document review:** Upload text-based PDF and DOCX files, extract their text, run AI-assisted review, inspect findings, record per-finding decisions, approve the review, and export the approved document as a PDF. The deployed upload-to-approved-export workflow has been tested.
+- **Governance dashboard:** View review metrics and potentially confusing guidelines. Analytics are most meaningful when review history is populated.
+- **Audit trail:** Record relevant review actions and decisions to support traceability.
 
-> **Feature-status note:** A visible screen or API route does not by itself prove that a complete workflow is operational. The final submission documentation should distinguish features that have been tested end to end from interface elements or workflows that remain incomplete.
+## Document Review Workflow
+
+1. Upload a PDF or DOCX file from the Documents section.
+2. BrandPilot extracts the document text and runs the review.
+3. Inspect the findings, their severity, original text, and suggested corrections.
+4. Accept an appropriate suggested fix or record an override with a reason.
+5. Submit the decisions and complete the approval action when the content is ready.
+6. Download the approved PDF export and verify its content and status.
+
+Review suggestions should be checked by a human before approval. Unsupported claims must be backed by evidence, and conflicting offer dates or other factual details must be verified rather than guessed.
 
 ## Technology Stack
 
@@ -185,15 +194,17 @@ The repository contains backend tests. Run the applicable test suite from the ba
 pytest
 ```
 
-For the competition submission, report the exact tests executed, environment, results, and any known failures. Do not describe a test as passed unless it was actually run against the submitted version.
+For a deployment smoke test, verify the live frontend and API, then exercise the main workflows: authentication, brand setup, text review, image review, document upload and review, decision submission, approval, approved PDF download, contributor submission, and governance dashboard updates.
+
+Report the exact automated tests executed, environment, results, and any known failures. Do not describe an automated test as passed unless it was actually run against the submitted version.
 
 ## Current Limitations and Validation Notes
 
 - Image review uses deterministic checks based on supplied colour and accessibility values; it does not perform general-purpose visual understanding or logo recognition.
 - AI-generated review findings can require human verification.
 - Some deterministic pre-flight checks depend on explicitly configured rule codes and available brand data.
-- Document review is implemented for text-based PDF/DOCX files; validate the deployed upload, review, decision, and export flow before claiming production verification.
-- Governance analytics should be tested using populated review and decision history.
+- Document review supports text-based PDF/DOCX files. Scanned or image-only PDFs require OCR, which is not currently configured.
+- Governance analytics should be evaluated with populated review and decision history.
 - External-contributor access should be tested for token expiry, revocation, invalid tokens, and brand scoping.
 
 ## Team – The Phantoms
@@ -207,7 +218,7 @@ For the competition submission, report the exact tests executed, environment, re
 
 ## Roadmap
 
-- Add OCR for scanned PDFs and strengthen document export formatting and approval evidence.
+- Add OCR support for scanned PDFs and strengthen document export formatting and approval evidence.
 - Expand review analytics and guideline-ambiguity detection.
 - Strengthen scoped and revocable access for external contributors.
 - Improve automated integration, error-handling, and usability testing.

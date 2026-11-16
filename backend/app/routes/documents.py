@@ -1,6 +1,7 @@
 
 import hashlib
 from datetime import datetime, timezone
+from io import BytesIO
 from pathlib import Path
 from uuid import UUID
 
@@ -15,7 +16,6 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from io import BytesIO
 
 from app.core.dependencies import get_current_user
 from app.db.session import get_db
@@ -28,10 +28,12 @@ from app.services.audit_service import create_audit_log
 from app.services.brand_access import authorize_brand_action
 from app.services.document_service import (
     MAX_FILE_SIZE,
+    apply_docx_decisions,
     extract_document_text,
     stamp_approved_document,
 )
 from app.services.review_service import review_content_with_fallback
+
 
 router = APIRouter(tags=["Documents"])
 
@@ -84,7 +86,10 @@ async def upload_document(
             brand_rules,
         )
     except RuntimeError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
+        ) from error
     except Exception as error:
         raise HTTPException(
             status_code=502,
@@ -206,7 +211,10 @@ def approve_document(
     document = db.get(Document, document_id)
 
     if document is None:
-        raise HTTPException(404, "Document not found.")
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found.",
+        )
 
     authorize_brand_action(
         db, current_user.id, document.brand_id, "reviews:decide"
@@ -222,7 +230,10 @@ def approve_document(
     review = db.get(ContentReview, document.review_id)
 
     if review is None:
-        raise HTTPException(409, "Associated review not found.")
+        raise HTTPException(
+            status_code=409,
+            detail="Associated review not found.",
+        )
 
     decisions = db.scalars(
         select(ReviewDecision).where(
@@ -285,7 +296,10 @@ def export_approved_document(
     document = db.get(Document, document_id)
 
     if document is None:
-        raise HTTPException(404, "Document not found.")
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found.",
+        )
 
     authorize_brand_action(
         db, current_user.id, document.brand_id, "brand:read"
@@ -297,6 +311,7 @@ def export_approved_document(
             detail="Only approved documents can be exported.",
         )
 
+    # Verify that the stored original document has not been modified.
     actual_hash = hashlib.sha256(document.file_data).hexdigest()
 
     if actual_hash != document.content_hash:
@@ -305,8 +320,24 @@ def export_approved_document(
             detail="Document integrity verification failed.",
         )
 
+    review = db.get(ContentReview, document.review_id)
+
+    if review is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Associated review not found.",
+        )
+
+    decisions = db.scalars(
+        select(ReviewDecision).where(
+            ReviewDecision.review_id == review.id
+        )
+    ).all()
+
     approver = db.get(User, document.approved_by)
-    approver_name = approver.full_name if approver else "BrandPilot"
+    approver_name = (
+        approver.full_name if approver else "BrandPilot"
+    )
 
     approved_at = (
         document.approved_at.isoformat()
@@ -315,12 +346,31 @@ def export_approved_document(
     )
 
     try:
+        # Always start from the original stored document.
+        export_data = document.file_data
+
+        # Apply accepted replacements to DOCX files only.
+        if document.file_type == "docx":
+            export_data = apply_docx_decisions(
+                file_data=export_data,
+                findings=review.findings,
+                decisions=decisions,
+            )
+
+        # Add the approval stamp after applying corrections.
         stamped = stamp_approved_document(
-            file_data=document.file_data,
+            file_data=export_data,
             file_type=document.file_type,
             approved_by=approver_name,
             approved_at=approved_at,
         )
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=409,
+            detail=str(error),
+        ) from error
+
     except Exception as error:
         raise HTTPException(
             status_code=500,
@@ -328,7 +378,10 @@ def export_approved_document(
         ) from error
 
     extension = document.file_type
-    filename = f"APPROVED_{Path(document.filename).stem}.{extension}"
+
+    filename = (
+        f"APPROVED_{Path(document.filename).stem}.{extension}"
+    )
 
     media_type = (
         "application/pdf"

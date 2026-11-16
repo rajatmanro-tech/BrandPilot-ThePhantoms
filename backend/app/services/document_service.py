@@ -69,6 +69,107 @@ def extract_document_text(file_data: bytes, filename: str) -> dict:
     }
 
 
+def apply_docx_decisions(
+    file_data: bytes,
+    findings: list[dict],
+    decisions: list,
+) -> bytes:
+    """Apply accepted finding replacements to a copy of the original DOCX."""
+
+    document = WordDocument(io.BytesIO(file_data))
+
+    accepted = {
+        decision.finding_index: decision.replacement_text
+        for decision in decisions
+        if decision.decision == "accepted"
+        and decision.replacement_text
+    }
+
+    def iter_paragraphs(doc):
+        for paragraph in doc.paragraphs:
+            yield paragraph
+
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    yield from cell.paragraphs
+
+    paragraphs = list(iter_paragraphs(document))
+
+    for finding_index, replacement in accepted.items():
+        if finding_index < 0 or finding_index >= len(findings):
+            raise ValueError(
+                f"Invalid finding index: {finding_index}"
+            )
+
+        original = findings[finding_index].get("original_text", "")
+
+        if not original:
+            raise ValueError(
+                f"Finding {finding_index} has no original text."
+            )
+
+        matches = [
+            paragraph
+            for paragraph in paragraphs
+            if original in paragraph.text
+        ]
+
+        total_matches = sum(
+            paragraph.text.count(original)
+            for paragraph in matches
+        )
+
+        if total_matches != 1:
+            raise ValueError(
+                f"Cannot safely apply finding {finding_index}: "
+                f"expected one exact match, found {total_matches}."
+            )
+
+        paragraph = matches[0]
+        combined = "".join(run.text for run in paragraph.runs)
+        start = combined.index(original)
+        end = start + len(original)
+
+        # Map the replacement across existing runs, retaining the
+        # formatting of the first affected run.
+        position = 0
+        affected = []
+
+        for run in paragraph.runs:
+            run_start = position
+            run_end = position + len(run.text)
+
+            if run_end > start and run_start < end:
+                affected.append((run, run_start, run_end))
+
+            position = run_end
+
+        if not affected:
+            raise ValueError(
+                f"Could not locate the text for finding {finding_index}."
+            )
+
+        first_run, first_start, _ = affected[0]
+        last_run, _, last_end = affected[-1]
+
+        prefix = first_run.text[:start - first_start]
+        suffix = last_run.text[end - (last_end - len(last_run.text)):]
+
+        if first_run is last_run:
+            first_run.text = prefix + replacement + suffix
+        else:
+            first_run.text = prefix + replacement
+
+            for run, _, _ in affected[1:-1]:
+                run.text = ""
+
+            last_run.text = suffix
+
+    output = io.BytesIO()
+    document.save(output)
+    return output.getvalue()
+
 def stamp_approved_document(
     file_data: bytes,
     file_type: str,

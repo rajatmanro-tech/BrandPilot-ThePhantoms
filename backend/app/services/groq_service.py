@@ -82,26 +82,38 @@ BRAND RULES:
 {rules_text or "No specific brand rules provided."}
 
 CONTENT:
+<content>
 {content}
+</content>
 
 REQUIRED JSON SCHEMA:
 {json.dumps(schema, ensure_ascii=False)}
 
 INSTRUCTIONS:
 - Return exactly one JSON object.
-- Follow the supplied schema.
+- Follow the supplied schema exactly.
 - Include every required field.
 - Use correct field names and data types.
 - Use only allowed enum values.
 - Do not include Markdown or code fences.
-- Do not include text outside the JSON object.
 - Report only genuine, identifiable issues.
 - Do not invent violations.
 - Every finding must be supported by an exact excerpt.
-- Use exact text from the submitted content for original_text.
+- Use exact text from submitted content for original_text.
 - Only report issues connected to an applicable brand rule.
 - Avoid duplicate findings.
 - Keep explanations and suggestions concise.
+
+REPLACEMENT TEXT RULES:
+- suggestion must explain what should change.
+- replacement_text must contain complete, ready-to-use corrected wording.
+- replacement_text must be actual replacement copy, not instructions.
+- Never copy suggestion into replacement_text.
+- Preserve meaning wherever possible.
+- Do not invent facts, statistics, evidence, or guarantees.
+- If no safe replacement can be written without additional
+  information, set replacement_text to null.
+- If a neutral and safe rewrite is possible, provide it.
 
 SCORING:
 - Start with 100 points.
@@ -112,6 +124,15 @@ SCORING:
 - Do not deduct points for duplicate findings.
 - Final score cannot be below 0.
 - A score of 100 means fully compliant.
+
+For every finding:
+- Generate replacement_text whenever a safe rewrite is possible.
+- For exaggerated performance claims, remove unsupported statistics.
+- For absolute promises, use realistic qualified wording.
+- For urgency-heavy language, provide neutral promotional wording.
+- For conflicting offer dates, return null until dates are verified.
+- For image alt text, use only available image context.
+- Never invent facts, statistics, prices, or guarantees.
 """
 
     last_error = None
@@ -146,7 +167,9 @@ Previous error:
                         "content": (
                             "You are a brand governance reviewer. "
                             "Return only one valid JSON object. "
-                            "Follow the supplied schema exactly."
+                            "Follow the supplied schema exactly. "
+                            "Provide real replacement wording, "
+                            "never editing instructions as replacement text."
                         ),
                     },
                     {

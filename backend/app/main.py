@@ -11,6 +11,7 @@ from app.routes.preflight import router as preflight_router
 from app.routes.visual_reviews import router as visual_reviews_router
 from app.routes.contributors import router as contributors_router
 from app.routes.review_decisions import router as review_decisions_router
+from app.routes.document_reviews import router as document_reviews_router
 app = FastAPI(
     title="BrandPilot API",
     description="AI-powered Brand Governance Platform",
@@ -45,6 +46,7 @@ app.include_router(preflight_router)
 app.include_router(visual_reviews_router)
 app.include_router(review_decisions_router)
 app.include_router(contributors_router)
+app.include_router(document_reviews_router)
 @app.get("/")
 def root():
     return {

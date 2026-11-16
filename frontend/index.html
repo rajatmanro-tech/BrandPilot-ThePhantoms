@@ -116,7 +116,13 @@ mark.done{background:none;border-color:transparent;border-bottom:2px dashed var(
 
 <section class="view" id="queue">
 <h1>Approval queue</h1><p class="sub">Resolve every flagged phrase, then approve and export. Run a scan in Text review first.</p>
-<div class="card" id="qlist"></div>
+<div class="card">
+  <label for="reviewSelect">Select a submitted review</label>
+  <select id="reviewSelect" style="width:100%;padding:12px;margin:10px 0">
+    <option value="">Loading reviews...</option>
+  </select>
+  <div id="qlist"></div>
+</div>
 <div class="row"><button class="btn g" id="approve" disabled>Approve &amp; Export</button><span class="fn" id="qhint" style="color:var(--mut)"></span></div>
 <div id="badge"></div>
 </section>
@@ -241,7 +247,9 @@ async function loadRules(){needBrand();const a=await api(`/brands/${activeBrandI
 $("#addRule").onclick=async()=>{try{needBrand();const b={category:$("#ruleCategory").value.trim(),title:$("#ruleTitle").value.trim(),description:$("#ruleDescription").value.trim(),severity:$("#ruleSeverity").value,rule_code:$("#ruleCode").value.trim()||null};await api(`/brands/${activeBrandId}/rules`,{method:"POST",body:JSON.stringify(b)});["ruleCategory","ruleTitle","ruleDescription","ruleCode"].forEach(x=>$("#"+x).value="");await loadRules();say("ruleMsg","Rule saved.")}catch(e){say("ruleMsg",e.message)}};
 $("#refreshRules").onclick=()=>loadRules().catch(e=>say("ruleMsg",e.message));
 $("#ruleList").onclick=async e=>{const t=e.target.closest("[data-toggle]"),d=e.target.closest("[data-delete]");try{if(t)await api(`/rules/${t.dataset.toggle}`,{method:"PUT",body:JSON.stringify({is_active:t.dataset.active!=="true"})});else if(d)await api(`/rules/${d.dataset.delete}`,{method:"DELETE"});else return;await loadRules()}catch(x){say("ruleMsg",x.message)}};
-const views=["setup","editor","image","queue","contributors","external","documents","dashboard","account"],ed=$("#ed"),pop=$("#pop");function route(){let h=location.hash.slice(1);if(!views.includes(h))h="setup";views.forEach(v=>$("#"+v).classList.toggle("on",v===h));document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on",a.hash==="#"+h));if(h==="queue")renderQueue();if(h==="dashboard")loadDashboard();if(h==="image")loadImageHistory().catch(e=>say("imageMsg",e.message));if(h==="contributors")renderContributorTokens()}addEventListener("hashchange",route);
+const views=["setup","editor","image","queue","contributors","external","documents","dashboard","account"],ed=$("#ed"),pop=$("#pop");function route(){let h=location.hash.slice(1);if(!views.includes(h))h="setup";views.forEach(v=>$("#"+v).classList.toggle("on",v===h));document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on",a.hash==="#"+h));if (h === "queue") {
+  loadSavedReviews();
+}if(h==="dashboard")loadDashboard();if(h==="image")loadImageHistory().catch(e=>say("imageMsg",e.message));if(h==="contributors")renderContributorTokens()}addEventListener("hashchange",route);
 document.querySelectorAll("input[data-f]").forEach(i=>i.onchange=()=>$("#"+i.dataset.f).textContent=[...i.files].map(f=>f.name).join(", "));
 function addColor(v){const d=document.createElement("div");d.className="hex";d.innerHTML='<div class="sw"></div><input type="text" maxlength="7">';const t=d.querySelector("input"),sw=d.querySelector(".sw");t.value=v;t.oninput=()=>sw.style.background=/^#[0-9a-f]{6}$/i.test(t.value)?t.value:"transparent";t.oninput();$("#colors").append(d)}addColor("#6D28D9");addColor("#0E0E12");$("#addc").onclick=()=>addColor("");
 $("#save").onclick=()=>say("saved","Palette inputs saved for this session. Configure image review palette below.");
@@ -269,6 +277,55 @@ $("#pa").onclick = async () => {
 };
 $("#pv").onclick=()=>{pendingFinding=activeFinding;pop.style.display="none";$("#modal").classList.add("on")};$("#wc").onclick=()=>$("#modal").classList.remove("on");
 $("#wo").onclick=async()=>{const reason=$("#why").value.trim();if(!reason){$("#werr").style.display="block";return}try{await decision(pendingFinding,"overridden",reason,null);$("#modal").classList.remove("on")}catch(e){$("#werr").textContent=e.message;$("#werr").style.display="block"}};
+let savedReviews = [];
+
+async function loadSavedReviews() {
+  try {
+    needBrand();
+
+    savedReviews = await api(`/brands/${activeBrandId}/reviews`);
+
+    const select = $("#reviewSelect");
+    select.innerHTML = '<option value="">Select a review</option>';
+
+    savedReviews.forEach(review => {
+      const option = document.createElement("option");
+      option.value = review.id;
+      option.textContent =
+        `${review.overall_status} · ${review.overall_score}/100 · ${new Date(review.created_at).toLocaleString()}`;
+      select.appendChild(option);
+    });
+
+    say("qhint", `${savedReviews.length} saved reviews found.`);
+  } catch (error) {
+    say("qhint", error.message);
+  }
+}
+
+$("#reviewSelect").onchange = async () => {
+  const review = savedReviews.find(
+    item => item.id === $("#reviewSelect").value
+  );
+
+  if (!review) return;
+
+  currentReview = review;
+
+  const decisions = await api(`/reviews/${review.id}/decisions`);
+
+  findings = (review.findings || []).map((finding, index) => {
+    const saved = decisions.find(d => d.finding_index === index);
+
+    return {
+      ...finding,
+      id: index,
+      status: saved?.decision || "open",
+      reason: saved?.reason || null
+    };
+  });
+
+  renderQueue();
+};
 function renderQueue() {
   if (!findings.length) {
     $("#qlist").textContent = "Run a text review first.";

@@ -187,13 +187,13 @@ def apply_docx_decisions(
     return output.getvalue()
 
 
+
 def apply_pdf_decisions(
     file_data: bytes,
     findings: list[dict],
     decisions: list,
 ) -> bytes:
-    """Apply accepted replacements to uniquely located PDF text."""
-
+    """Apply accepted replacements to PDF text."""
     import fitz
 
     accepted = {
@@ -212,7 +212,9 @@ def apply_pdf_decisions(
                     f"Invalid finding index: {finding_index}"
                 )
 
-            original = findings[finding_index].get("original_text", "").strip()
+            original = findings[finding_index].get(
+                "original_text", ""
+            ).strip()
 
             if not original:
                 raise ValueError(
@@ -234,13 +236,19 @@ def apply_pdf_decisions(
             page_number, rect = matches[0]
             page = pdf[page_number]
 
-            # Remove the original phrase.
+            # Expand the replacement area around the original text.
+            expanded_rect = fitz.Rect(
+                rect.x0,
+                rect.y0 - 2,
+                min(page.rect.width - 35, rect.x0 + 350),
+                min(page.rect.height - 35, rect.y1 + 55),
+            )
+
             page.add_redact_annot(rect, fill=(1, 1, 1))
             page.apply_redactions()
 
-            # Insert the replacement in the same area.
             result = page.insert_textbox(
-                rect,
+                expanded_rect,
                 replacement,
                 fontsize=9,
                 fontname="helv",
@@ -251,13 +259,14 @@ def apply_pdf_decisions(
             if result < 0:
                 raise ValueError(
                     f"Replacement for finding {finding_index} "
-                    "does not fit in the original PDF text area."
+                    "still does not fit in the expanded PDF area."
                 )
 
         return pdf.tobytes()
 
     finally:
         pdf.close()
+
 
 def stamp_approved_document(
     file_data: bytes,

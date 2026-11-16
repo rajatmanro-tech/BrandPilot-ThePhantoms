@@ -187,6 +187,78 @@ def apply_docx_decisions(
     return output.getvalue()
 
 
+def apply_pdf_decisions(
+    file_data: bytes,
+    findings: list[dict],
+    decisions: list,
+) -> bytes:
+    """Apply accepted replacements to uniquely located PDF text."""
+
+    import fitz
+
+    accepted = {
+        decision.finding_index: decision.replacement_text
+        for decision in decisions
+        if decision.decision == "accepted"
+        and decision.replacement_text
+    }
+
+    pdf = fitz.open(stream=file_data, filetype="pdf")
+
+    try:
+        for finding_index, replacement in accepted.items():
+            if not 0 <= finding_index < len(findings):
+                raise ValueError(
+                    f"Invalid finding index: {finding_index}"
+                )
+
+            original = findings[finding_index].get("original_text", "").strip()
+
+            if not original:
+                raise ValueError(
+                    f"Finding {finding_index} has no original text."
+                )
+
+            matches = []
+
+            for page_number, page in enumerate(pdf):
+                for rect in page.search_for(original):
+                    matches.append((page_number, rect))
+
+            if len(matches) != 1:
+                raise ValueError(
+                    f"Cannot safely apply PDF finding {finding_index}: "
+                    f"expected one exact match, found {len(matches)}."
+                )
+
+            page_number, rect = matches[0]
+            page = pdf[page_number]
+
+            # Remove the original phrase.
+            page.add_redact_annot(rect, fill=(1, 1, 1))
+            page.apply_redactions()
+
+            # Insert the replacement in the same area.
+            result = page.insert_textbox(
+                rect,
+                replacement,
+                fontsize=9,
+                fontname="helv",
+                color=(0, 0, 0),
+                align=0,
+            )
+
+            if result < 0:
+                raise ValueError(
+                    f"Replacement for finding {finding_index} "
+                    "does not fit in the original PDF text area."
+                )
+
+        return pdf.tobytes()
+
+    finally:
+        pdf.close()
+
 def stamp_approved_document(
     file_data: bytes,
     file_type: str,

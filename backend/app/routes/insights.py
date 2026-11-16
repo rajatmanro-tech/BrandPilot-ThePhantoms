@@ -92,8 +92,9 @@ def get_brand_insights(
             "issue": issue,
             "count": count,
         }
-        for (category, issue), count in issue_counts.most_common(10)
-    ]
+        for (category, issue), count in issue_counts.most_common()
+        if count >= 2
+    ][:10]
 
     ambiguity_signals = [
         {

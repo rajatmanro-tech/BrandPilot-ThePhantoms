@@ -372,16 +372,22 @@ async function loadDashboard() {
 
     const signals = insights.ambiguity_signals || [];
 
-    $("#conf").innerHTML = signals.length
-      ? signals.map(x =>
-          `<div class="item"><div><b>${esc(x.category)}</b>
+$("#conf").innerHTML = signals.length
+  ? signals.map(x => `
+      <div class="item">
+        <div>
+          <b>${esc(x.category)}</b>
           <p>${esc(x.issue)}</p>
-          <small>${esc(x.signal)} (${x.override_count} overrides)</small>
-          </div></div>`
-        ).join("") +
-        `<p class="hint">${esc(insights.ambiguity_note || "")}</p>`
-      : `<p>No repeated override patterns detected yet.</p>
-         <p class="hint">${esc(insights.ambiguity_note || "")}</p>`;
+          <small>${x.override_count} reviewer overrides</small>
+          <p>${esc(x.signal)}</p>
+        </div>
+      </div>
+    `).join("")
+  : `<p>No guidelines have been overridden repeatedly yet.</p>
+     <p class="hint">
+       A guideline appears here after at least two reviewers override
+       the same type of finding.
+     </p>`;
 
   } catch (e) {
     say("auditVerify", e.message);

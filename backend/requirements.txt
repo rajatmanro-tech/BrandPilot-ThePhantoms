@@ -14,3 +14,7 @@ openai
 numpy
 Pillow
 python-multipart
+pypdf
+python-docx
+reportlab
+PyMuPDF

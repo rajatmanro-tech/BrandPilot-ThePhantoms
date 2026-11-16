@@ -20,6 +20,7 @@ class ReviewFindingResponse(BaseModel):
     explanation: str
     suggestion: str
     original_text: str
+    replacement_text: str | None = None
 
 
 class ReviewResponse(BaseModel):

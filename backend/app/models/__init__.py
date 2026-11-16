@@ -7,3 +7,4 @@ from app.models.audit_log import AuditLog
 from app.models.review_decision import ReviewDecision
 from app.models.visual_review import VisualReview
 from app.models.contributor_token import ContributorToken
+from app.models.document import Document

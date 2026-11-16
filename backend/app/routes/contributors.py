@@ -87,6 +87,39 @@ def create_contributor_token(
     )
 
 
+@router.get("/brands/{brand_id}/contributors/tokens")
+def list_contributor_tokens(
+    brand_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    authorize_brand_action(
+        db, current_user.id, brand_id, "members:manage"
+    )
+
+    tokens = db.scalars(
+        select(ContributorToken)
+        .where(ContributorToken.brand_id == brand_id)
+        .order_by(ContributorToken.created_at.desc())
+    ).all()
+
+    now = datetime.now(timezone.utc)
+
+    return [
+        {
+            "id": str(token.id),
+            "name": token.name,
+            "created_at": token.created_at.isoformat(),
+            "expires_at": token.expires_at.isoformat(),
+            "status": (
+                "revoked" if token.revoked_at
+                else "expired" if token.expires_at <= now
+                else "active"
+            ),
+        }
+        for token in tokens
+    ]
+
 @router.delete("/contributors/tokens/{token_id}")
 def revoke_contributor_token(
     token_id: UUID,

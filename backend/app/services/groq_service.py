@@ -103,6 +103,12 @@ INSTRUCTIONS:
 - Only report issues connected to an applicable brand rule.
 - Avoid duplicate findings.
 - Keep explanations and suggestions concise.
+- For every finding, provide context_before and context_after.
+- context_before must contain the exact 30-100 characters immediately preceding original_text.
+- context_after must contain the exact 30-100 characters immediately following original_text.
+- Copy context exactly from the submitted content.
+- If no surrounding text exists, use an empty string.
+- Never invent or paraphrase context.
 
 REPLACEMENT TEXT RULES:
 - suggestion must explain what should change.

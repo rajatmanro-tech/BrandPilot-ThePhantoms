@@ -31,9 +31,14 @@ def extract_document_text(file_data: bytes, filename: str) -> dict:
         if reader.is_encrypted:
             raise ValueError("Encrypted PDFs are not supported.")
 
-        text = "\n".join(
+        page_texts = [
             page.extract_text() or ""
             for page in reader.pages
+        ]
+
+        text = "\n".join(
+            f"[PAGE {index + 1}]\n{page_text}"
+            for index, page_text in enumerate(page_texts)
         )
 
     else:
@@ -188,12 +193,14 @@ def apply_docx_decisions(
 
 
 
+
 def apply_pdf_decisions(
     file_data: bytes,
     findings: list[dict],
     decisions: list,
 ) -> bytes:
-    """Apply accepted replacements to PDF text."""
+    """Apply accepted PDF replacements using surrounding context."""
+    import re
     import fitz
 
     accepted = {
@@ -203,43 +210,91 @@ def apply_pdf_decisions(
         and decision.replacement_text
     }
 
+    def normalize(text):
+        return re.sub(r"\s+", " ", text).strip()
+
     pdf = fitz.open(stream=file_data, filetype="pdf")
 
     try:
+        # Collect matches before editing so page text positions
+        # are not affected by earlier replacements.
+        replacements = []
+
         for finding_index, replacement in accepted.items():
             if not 0 <= finding_index < len(findings):
                 raise ValueError(
                     f"Invalid finding index: {finding_index}"
                 )
 
-            original = findings[finding_index].get(
-                "original_text", ""
-            ).strip()
+            finding = findings[finding_index]
+
+            original = normalize(finding.get("original_text", ""))
+            before = normalize(finding.get("context_before") or "")
+            after = normalize(finding.get("context_after") or "")
 
             if not original:
                 raise ValueError(
                     f"Finding {finding_index} has no original text."
                 )
 
-            matches = []
+            candidates = []
 
             for page_number, page in enumerate(pdf):
-                for rect in page.search_for(original):
-                    matches.append((page_number, rect))
+                page_text = normalize(page.get_text("text"))
 
-            if len(matches) != 1:
+                search_start = 0
+                while True:
+                    position = page_text.find(original, search_start)
+
+                    if position == -1:
+                        break
+
+                    preceding = page_text[:position]
+                    following = page_text[position + len(original):]
+
+                    before_ok = (
+                        not before
+                        or preceding.endswith(before)
+                    )
+                    after_ok = (
+                        not after
+                        or following.startswith(after)
+                    )
+
+                    if before_ok and after_ok:
+                        candidates.append(page_number)
+
+                    search_start = position + 1
+
+            if len(candidates) != 1:
                 raise ValueError(
-                    f"Cannot safely apply PDF finding {finding_index}: "
-                    f"expected one exact match, found {len(matches)}."
+                    f"Cannot safely identify PDF finding {finding_index}: "
+                    f"found {len(candidates)} context matches."
                 )
 
-            page_number, rect = matches[0]
+            page_number = candidates[0]
+            page = pdf[page_number]
+            rects = page.search_for(
+                finding.get("original_text", "").strip()
+            )
+
+            if len(rects) != 1:
+                raise ValueError(
+                    f"Cannot safely locate PDF finding {finding_index} "
+                    "on its identified page."
+                )
+
+            replacements.append(
+                (page_number, rects[0], replacement, finding_index)
+            )
+
+        # Apply replacements after all findings have been validated.
+        for page_number, rect, replacement, finding_index in replacements:
             page = pdf[page_number]
 
-            # Expand the replacement area around the original text.
             expanded_rect = fitz.Rect(
                 rect.x0,
-                rect.y0 - 2,
+                max(0, rect.y0 - 2),
                 min(page.rect.width - 35, rect.x0 + 350),
                 min(page.rect.height - 35, rect.y1 + 55),
             )
@@ -259,13 +314,14 @@ def apply_pdf_decisions(
             if result < 0:
                 raise ValueError(
                     f"Replacement for finding {finding_index} "
-                    "still does not fit in the expanded PDF area."
+                    "does not fit in the available PDF area."
                 )
 
         return pdf.tobytes()
 
     finally:
         pdf.close()
+
 
 
 def stamp_approved_document(

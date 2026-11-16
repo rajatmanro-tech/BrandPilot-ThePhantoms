@@ -17,7 +17,7 @@ from app.routes.contributors import router as contributors_router
 from app.routes.review_decisions import router as review_decisions_router
 from app.routes.documents import router as documents_router
 from app.routes.insights import router as insights_router
-
+from app.routes.document_reviews import router as document_reviews_router
 
 app = FastAPI(
     title="BrandPilot API",
@@ -55,6 +55,7 @@ app.include_router(review_decisions_router)
 app.include_router(contributors_router)
 app.include_router(documents_router)
 app.include_router(insights_router)
+app.include_router(document_reviews_router)
 
 
 @app.get("/")

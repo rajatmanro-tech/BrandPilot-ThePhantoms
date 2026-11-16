@@ -1,5 +1,6 @@
 
 import hashlib
+import logging
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
@@ -29,11 +30,14 @@ from app.services.brand_access import authorize_brand_action
 from app.services.document_service import (
     MAX_FILE_SIZE,
     apply_docx_decisions,
+    apply_pdf_decisions,
     extract_document_text,
     stamp_approved_document,
 )
 from app.services.review_service import review_content_with_fallback
 
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Documents"])
 
@@ -311,7 +315,6 @@ def export_approved_document(
             detail="Only approved documents can be exported.",
         )
 
-    # Verify that the stored original document has not been modified.
     actual_hash = hashlib.sha256(document.file_data).hexdigest()
 
     if actual_hash != document.content_hash:
@@ -346,10 +349,8 @@ def export_approved_document(
     )
 
     try:
-        # Always start from the original stored document.
         export_data = document.file_data
 
-        # Apply accepted replacements to DOCX files only.
         if document.file_type == "docx":
             export_data = apply_docx_decisions(
                 file_data=export_data,
@@ -357,7 +358,13 @@ def export_approved_document(
                 decisions=decisions,
             )
 
-        # Add the approval stamp after applying corrections.
+        elif document.file_type == "pdf":
+            export_data = apply_pdf_decisions(
+                file_data=export_data,
+                findings=review.findings,
+                decisions=decisions,
+            )
+
         stamped = stamp_approved_document(
             file_data=export_data,
             file_type=document.file_type,
@@ -366,12 +373,22 @@ def export_approved_document(
         )
 
     except ValueError as error:
+        logger.warning(
+            "Document export validation failed for document_id=%s: %s",
+            document_id,
+            error,
+            exc_info=True,
+        )
         raise HTTPException(
             status_code=409,
             detail=str(error),
         ) from error
 
     except Exception as error:
+        logger.exception(
+            "Failed to generate approved export for document_id=%s",
+            document_id,
+        )
         raise HTTPException(
             status_code=500,
             detail="Unable to generate approved export.",

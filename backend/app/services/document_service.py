@@ -69,20 +69,22 @@ def extract_document_text(file_data: bytes, filename: str) -> dict:
     }
 
 
+
 def apply_docx_decisions(
     file_data: bytes,
     findings: list[dict],
     decisions: list,
 ) -> bytes:
-    """Apply accepted finding replacements to a copy of the original DOCX."""
+    """Apply accepted replacements while tolerating DOCX whitespace differences."""
+
+    import re
 
     document = WordDocument(io.BytesIO(file_data))
 
     accepted = {
         decision.finding_index: decision.replacement_text
         for decision in decisions
-        if decision.decision == "accepted"
-        and decision.replacement_text
+        if decision.decision == "accepted" and decision.replacement_text
     }
 
     def iter_paragraphs(doc):
@@ -94,45 +96,59 @@ def apply_docx_decisions(
                 for cell in row.cells:
                     yield from cell.paragraphs
 
+    def normalized_with_positions(text):
+        chars = []
+        starts = []
+        ends = []
+
+        for i, char in enumerate(text):
+            if char.isspace():
+                if chars and chars[-1] == " ":
+                    ends[-1] = i + 1
+                    continue
+                char = " "
+
+            chars.append(char)
+            starts.append(i)
+            ends.append(i + 1)
+
+        return "".join(chars).strip(), starts, ends
+
     paragraphs = list(iter_paragraphs(document))
 
     for finding_index, replacement in accepted.items():
-        if finding_index < 0 or finding_index >= len(findings):
-            raise ValueError(
-                f"Invalid finding index: {finding_index}"
-            )
+        if not 0 <= finding_index < len(findings):
+            raise ValueError(f"Invalid finding index: {finding_index}")
 
         original = findings[finding_index].get("original_text", "")
 
         if not original:
-            raise ValueError(
-                f"Finding {finding_index} has no original text."
-            )
+            raise ValueError(f"Finding {finding_index} has no original text.")
 
-        matches = [
-            paragraph
-            for paragraph in paragraphs
-            if original in paragraph.text
-        ]
+        target = re.sub(r"\s+", " ", original).strip()
+        matches = []
 
-        total_matches = sum(
-            paragraph.text.count(original)
-            for paragraph in matches
-        )
+        for paragraph in paragraphs:
+            combined = "".join(run.text for run in paragraph.runs)
+            normalized, starts, ends = normalized_with_positions(combined)
 
-        if total_matches != 1:
+            position = normalized.find(target)
+
+            while position != -1:
+                actual_start = starts[position]
+                actual_end = ends[position + len(target) - 1]
+                matches.append((paragraph, actual_start, actual_end))
+                position = normalized.find(target, position + 1)
+
+        if len(matches) != 1:
             raise ValueError(
                 f"Cannot safely apply finding {finding_index}: "
-                f"expected one exact match, found {total_matches}."
+                f"expected one normalized match, found {len(matches)}. "
+                "The original text may span multiple paragraphs."
             )
 
-        paragraph = matches[0]
-        combined = "".join(run.text for run in paragraph.runs)
-        start = combined.index(original)
-        end = start + len(original)
+        paragraph, start, end = matches[0]
 
-        # Map the replacement across existing runs, retaining the
-        # formatting of the first affected run.
         position = 0
         affected = []
 
@@ -147,7 +163,7 @@ def apply_docx_decisions(
 
         if not affected:
             raise ValueError(
-                f"Could not locate the text for finding {finding_index}."
+                f"Could not locate finding {finding_index} in DOCX runs."
             )
 
         first_run, first_start, _ = affected[0]
@@ -169,6 +185,7 @@ def apply_docx_decisions(
     output = io.BytesIO()
     document.save(output)
     return output.getvalue()
+
 
 def stamp_approved_document(
     file_data: bytes,
